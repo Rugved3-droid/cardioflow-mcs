@@ -20,6 +20,7 @@ import { IABP_TIMINGS, type IabpTimingName } from '../src/model/devices/iabp';
 import { SLEW } from '../src/model/constants';
 import { ALL_THERAPY_IDS, THERAPY_STATES } from '../src/model/therapyStates';
 import { computeAllSteadyStates } from '../src/model/steadyStates';
+import { WOOD_PER_MMHG_S_ML } from '../src/model/baroreflex';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -369,6 +370,31 @@ function main() {
   const lvedpRises = pheno.map((x) => x.s3.lvedp - x.s0.lvedp);
   check('E8', 'the LVEDP rise varies >3-fold across phenotypes (evidence for retiring the ecmo-lvedp item)', 'magnitude is phenotype-contingent even where the sign is not; in patients the sign varies too', Math.max(...lvedpRises) / Math.min(...lvedpRises) > 3, lvedpRises.map((d) => `+${d.toFixed(1)}`).join(', '));
   cmp('E8', 'the shipped patient is the afterload-dominant phenotype (largest LVEDP rise of the sweep)', lvedpRises[0], '>', Math.max(...lvedpRises.slice(1)) - 1e-9, 'this is the patient who needs venting, which is what the app claims it is showing');
+
+  /* E9 — flow budget. Reported total systemic flow must be exactly the sum of its
+     parts, and the arterial pressure drop must obey Ohm's law at the reflex's own
+     SVR. This is the reconciliation a reviewer is most likely to demand out loud. */
+  {
+    const s = base.clone();
+    s.setSettings(THERAPY_STATES.S3.settings);
+    settle(s, 'E9');
+    const T = s.cycleMs;
+    let qAo = 0, qImp = 0, qEcmo = 0, qSvr = 0, qBron = 0, pSa = 0, pSv = 0;
+    for (let i = 0; i < T; i++) {
+      const m = s.last;
+      qAo += m.qAortic; qImp += m.qImpella; qEcmo += m.qEcmo;
+      qSvr += m.qSvr; qBron += m.qBronchial; pSa += m.pSa; pSv += m.pSv;
+      s.tick();
+    }
+    [qAo, qImp, qEcmo, qSvr, qBron, pSa, pSv] = [qAo, qImp, qEcmo, qSvr, qBron, pSa, pSv].map((x) => x / T);
+    const parts = (qAo + qImp + qEcmo) * 0.06;
+    const reported = s.lastBeat!.totalFlowLpm;
+    check('E9', 'reported total systemic flow equals native + Impella + ECMO to within 1%', 'the headline flow number must be decomposable on demand', Math.abs(parts - reported) / reported < 0.01, `${fx(parts)} vs ${fx(reported)} L/min`);
+    check('E9', 'arterial inflow equals SVR outflow plus bronchial shunt to within 1%', 'nothing enters or leaves the arterial compartment unaccounted for', Math.abs((qSvr + qBron) * 0.06 - parts) / parts < 0.01, `${fx((qSvr + qBron) * 0.06)} vs ${fx(parts)} L/min`);
+    const impliedSvr = (pSa - pSv) / qSvr;
+    check('E9', "Ohm's law holds at the reflex's own SVR to within 1%", 'the displayed SVR is the resistance the circulation actually sees, not a separate number', Math.abs(impliedSvr - s.state.svr) / s.state.svr < 0.01, `${fx(impliedSvr * WOOD_PER_MMHG_S_ML)} vs ${fx(s.state.svr * WOOD_PER_MMHG_S_ML)} WU`);
+    check('E9', 'bronchial/Thebesian shunt is a small fraction of systemic flow (<5%)', 'it is a real path that keeps filling the LV, but it must not be a major conduit', (qBron * 0.06) / parts < 0.05, `${fx((100 * qBron) / (qSvr + qBron), 1)}%`);
+  }
 
   /* E7 — item bank consistency: the simulator must agree with every hand-keyed answer.
      (Direction of dependency: sim is checked AGAINST the key; the key is never derived from the sim.) */

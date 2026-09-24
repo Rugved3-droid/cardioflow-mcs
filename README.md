@@ -112,6 +112,38 @@ is offered as a management step rather than as a comparison.
 
 (Full values in `validation/report.md`.)
 
+### Where S3's 6.3 L/min comes from
+
+Total systemic flow at S3 is high, and it decomposes exactly:
+
+| | L/min |
+|---|---:|
+| Native ejection across the aortic valve (SV 22.6 mL x 100 bpm) | 2.26 |
+| VA-ECMO circuit | 4.00 |
+| Impella | 0.00 |
+| **Reported total** | **6.26** |
+| of which through SVR | 6.15 |
+| of which bronchial/Thebesian shunt (bypasses SVR, returns to LA) | 0.10 |
+
+Cardiac index 3.5 L/min/m2 at an assumed BSA of 1.8. Ohm's law closes on the reflex's own
+resistance: mean P_SA 79.1 - mean P_SV 12.2 over 6.15 L/min gives 10.87 Wood units against a
+reflex SVR state of 10.87 WU, a 0.006% discrepancy. Validation E9 checks all of this on every
+run, so the decomposition cannot silently drift.
+
+**Why it is supranormal, and the answer to give if asked.** It is arithmetically forced: a
+4 L/min circuit running on top of a ventricle still ejecting 2.3 L/min totals 6.3, and
+nothing else is going on. S3 is deliberately *full circuit support before weaning* - which is
+the state in which LV distension happens, and therefore the state worth teaching. Clinically
+you would wean the circuit, which is exactly what S5 does.
+
+**The soft spot, stated plainly.** Native ejection is better preserved here (2.98 -> 2.26,
+-24%) than in many real patients on full flow, because the reflex drops SVR from 15.8 to
+10.9 Wood units and that partly shields the ventricle from the afterload rise. With the
+reflex disabled the same patient falls to 1.53 L/min. A real shocked patient on
+catecholamines sits somewhere between: more vasoconstricted than this reflex allows, so less
+native output and more distension. The gain here is a modelling choice, and this is the
+optimistic end of the plausible range.
+
 ### Baroreflex
 
 An arterial baroreflex acts on systemic vascular resistance:
@@ -148,10 +180,17 @@ ventricular mechanics instead.
 
 **What it deliberately leaves out**, each for a reason rather than by omission:
 
-- **Heart rate.** A reflex-driven HR would differ between the two panes, because they sit at
-  different pressures. That desynchronises the shared cardiac clock the whole twin-pane
-  comparison depends on, and would break beat-to-beat alignment of the waveforms and PV
-  loops. Left out on purpose.
+- **Heart rate - a design constraint, not an omission.** Baroreflex tachycardia is real, and
+  it is left out for a structural reason. The two panes sit at different pressures, so a
+  pressure-dependent heart rate would give them different beat lengths. They would drift out
+  of phase within seconds, and the shared cardiac clock is the thing the entire twin-pane
+  comparison rests on: both panes advance by the same integer number of 1 ms ticks, so the
+  same point in the cardiac cycle is on screen in both at every frame. Lose that and the
+  waveforms, the PV loops and the beat-aligned delta panel stop being comparable - the
+  learner could no longer tell whether a difference between panes came from the therapy or
+  from the two hearts being at different points in their beat. A constant heart rate is the
+  price of the comparison, and it is worth it. It also means every per-beat number in the
+  app is a like-for-like comparison at identical cycle length.
 - **Contractility.** Ees defines this patient's phenotype and is displayed in the app; a
   reflex moving it would make that label unstable.
 - **Pulsatility sensing.** Real baroreceptors fire on the pulsatile component, so the loss of
@@ -243,7 +282,7 @@ aortic-valve opening fall at **every** phenotype.
 
 ### Known limitations
 
-Baroreflex acts on SVR only (see above for what that omits and why). No local autoregulation. No drugs (by design). The RV is minimal. No aortic regurgitation or watershed/mixing zone. Impella and ECMO curves are illustrative. No inertance, so there is no dicrotic notch *on the trace*, although AV closure is exact in the state. The IABP timing reference falls back to defaults if the balloon is armed while the AV is not opening.
+Baroreflex acts on SVR only. Heart rate is held constant by design, because a pressure-dependent HR would desynchronise the two panes' cardiac clocks and break the comparison the app exists to make (see Baroreflex above). No local autoregulation. No drugs (by design). The RV is minimal. No aortic regurgitation or watershed/mixing zone. Impella and ECMO curves are illustrative. No inertance, so there is no dicrotic notch *on the trace*, although AV closure is exact in the state. The IABP timing reference falls back to defaults if the balloon is armed while the AV is not opening.
 
 ---
 
@@ -257,6 +296,7 @@ Baroreflex acts on SVR only (see above for what that omits and why). No local au
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E9** Total systemic flow decomposes exactly into native + Impella + ECMO; arterial inflow balances SVR outflow plus bronchial shunt; Ohm's law closes on the reflex's own SVR; the shunt stays under 5% of systemic flow.
 - **E7** The simulator agrees with the answer key for every active item, and retired items are excluded from the learner-facing bank.
 - **E8** The stroke-work response to VA-ECMO changes sign with contractility, reconciling this model with Ostadal 2015; native SV and AV opening fall at every phenotype; the shipped patient is the afterload-dominant one.
 - **Every tick of every run:** no NaN/Inf, no negative volume, no P_LV > P_Ao while the AV is flagged closed, volume conserved, slew limits respected. Beat-to-beat continuity is checked during every ramp.
