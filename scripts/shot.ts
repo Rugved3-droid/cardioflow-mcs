@@ -73,6 +73,33 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await shot('1-overlay-trail');
     await sleep(30000);
     await shot('2-overlay-settled');
+  } else if (scenario === 'anat') {
+    await shot('0-s0');
+    await page.keyboard.press('4');
+    await sleep(48000);
+    await shot('1-s3');
+    await page.keyboard.press('5');
+    await sleep(40000);
+    await shot('2-s4');
+    await page.keyboard.press('a');
+    await sleep(900);
+    await shot('3-overlay');
+    await page.keyboard.press('a');
+    await sleep(400);
+    await page.keyboard.press('2');
+    await sleep(35000);
+    await shot('4-iabp');
+  } else if (scenario === 'anatwhy') {
+    const CLICK = '(function(){var panes=document.querySelectorAll(".pane");var b=panes[panes.length-1];var nums=Array.prototype.slice.call(b.querySelectorAll(".num"));for(var j=0;j<nums.length;j++){var k=nums[j].querySelector(".k");if(k&&k.textContent.indexOf("LVEDP")===0){var btn=nums[j].querySelector(".why");if(btn){btn.click();return true;}}}return false;})()';
+    await page.keyboard.press('4');
+    await sleep(50000);
+    await page.evaluate(CLICK);
+    await sleep(700);
+    await shot('0-step1-ecmo');
+    await sleep(700);
+    await shot('1-step3-map');
+    await sleep(1400);
+    await shot('2-final-lvedp');
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

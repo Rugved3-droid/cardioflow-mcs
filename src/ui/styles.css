@@ -41,7 +41,7 @@ button, input, select { font: inherit; color: inherit; }
 .app {
   height: 100%;
   display: grid;
-  grid-template-rows: 44px minmax(0, 1fr) auto;
+  grid-template-rows: 44px minmax(0, 1fr) auto auto;
 }
 
 /* ---------- top bar ---------- */
@@ -241,6 +241,30 @@ table.score { border-collapse: collapse; font-family: var(--mono); font-size: 13
 table.score td, table.score th { padding: 3px 12px 3px 0; text-align: left; }
 table.score th { color: var(--dim); font-weight: 500; }
 .headline { font-size: 22px; font-weight: 700; }
+
+/* ---------- anatomy band ---------- */
+.anatomy {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  padding: 5px 8px 6px;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 3px;
+  height: clamp(168px, 24vh, 292px);
+}
+.anat-head {
+  font: 600 10px var(--mono); color: var(--dim); letter-spacing: 0.10em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.anat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-height: 0; }
+.heartbox { position: relative; min-height: 0; min-width: 0; background: var(--panel-2); border-radius: 6px; overflow: hidden; }
+.heartbox .canvas-wrap { position: absolute; inset: 0; }
+.heart-tag {
+  position: absolute; top: 4px; left: 7px; z-index: 1;
+  font: 600 10px var(--mono); color: var(--faint); letter-spacing: 0.1em;
+}
+.anat-overlay-inner { width: min(92vw, 1500px); height: min(80vh, 780px); }
+.anatomy.big { height: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 16px; gap: 8px; }
+.anatomy.big .anat-head { font-size: 13px; letter-spacing: 0.13em; }
+@media (max-height: 820px) { .anatomy { height: clamp(130px, 20vh, 190px); padding: 4px 6px 5px; } }
 
 /* ---------- causal highlight ---------- */
 .num { position: relative; transition: background 0.25s, box-shadow 0.25s; }

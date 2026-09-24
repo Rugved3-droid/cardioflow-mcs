@@ -22,6 +22,9 @@ export const SLEW = {
   ecmoLpmPerS: 0.6,
 } as const;
 
+/** Cumulative transported-volume counters wrap here (mL) to stay in exact float range. */
+export const CUM_WRAP = 1e6;
+
 /** EMA weight for the beat-to-beat aortic-valve open fraction. */
 export const AV_FRACTION_EMA = 0.35;
 

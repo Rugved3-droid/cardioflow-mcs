@@ -25,6 +25,8 @@ import { derivePath, graphIntegrity, liveSteps, observeAll, UNOBSERVABLE_ALLOWED
 import { EDGES, NODES } from '../src/causal/graph';
 import { fmt, M, NODE_TILE, val } from '../src/ui/metrics';
 import { ANCHORS, planePoint } from '../src/plane/plane';
+import { GEO, NODE_PART, PATHS, pointAt } from '../src/anatomy/layout';
+import { ANATOMY_READS, arrowCountFor } from '../src/ui/drawAnatomy';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -534,6 +536,71 @@ function main() {
     const planeFields: [string, keyof BeatMetrics][] = [['map', M.map.key], ['totalFlowLpm', M.total.key], ['lvedp', M.lvedp.key], ['pva', M.pva.key]];
     check('E12', 'the plane reads the same BeatMetrics fields the numeric tiles display', 'one number, several views', planeFields.every(([f2, k]) => f2 === k), planeFields.map(([f2, k]) => `${f2}=${String(k)}`).join(', '));
     check('E12', 'anchors are documented constants, not fitted to the data being plotted', 'a point must mean the same thing in every session', ANCHORS.map[0] === 50 && ANCHORS.map[1] === 90 && ANCHORS.lvedp[0] === 35 && ANCHORS.lvedp[1] === 8, `MAP ${ANCHORS.map.join('→')}, flow ${ANCHORS.flow.join('→')}, LVEDP ${ANCHORS.lvedp.join('→')}, PVA ${ANCHORS.pva.join('→')}`);
+  }
+
+  /* E13 — anatomy layer. Everything drawn must be a function of simulator state, and
+     it must read the same fields the tiles do. An anatomy that can drift from the
+     numbers is a decorative loop, which is exactly what this must not be. */
+  {
+    // The anatomy reads INSTANTANEOUS Sample fields, not per-beat metrics: the chamber
+    // has to pulsate within the beat and the leaflets have to open and shut inside it.
+    const probe = Sim.fromSnapshot(SHOCK_PATIENT, fresh.S4).last as unknown as Record<string, unknown>;
+    const fieldErrors: string[] = [];
+    for (const [what, field] of Object.entries(ANATOMY_READS)) {
+      if (!(field in probe)) fieldErrors.push(`${what} reads "${field}", which is not a Sample field`);
+      else if (typeof probe[field] !== 'number') fieldErrors.push(`${what}: ${field} is not numeric`);
+    }
+    check('E13', 'every animated quantity names a real instantaneous simulator field', 'no drawn dimension may come from anywhere but the model', fieldErrors.length === 0, fieldErrors.join('; ') || Object.entries(ANATOMY_READS).map(([k, v]) => `${k}←${v}`).join(', '));
+
+    // and the chamber must actually pulsate within one beat, not just between states
+    {
+      const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh.S0);
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (let i = 0; i < sim.cycleMs; i++) {
+        lo = Math.min(lo, sim.last.vLv);
+        hi = Math.max(hi, sim.last.vLv);
+        sim.tick();
+      }
+      cmp('E13', 'the drawn LV cavity changes size within a single beat (it is instantaneous, not per-beat)', hi - lo, '>', 10, 'a chamber that only changed between states would be a chart, not a co-registration', true, 1);
+    }
+
+    // arrow count must be monotonic in flow, and zero at zero flow
+    const flows = [0, 1, 5, 12, 25, 45, 70, 110];
+    const counts = flows.map((q) => arrowCountFor(q));
+    const mono = counts.every((c, i) => i === 0 || c >= counts[i - 1]);
+    check('E13', 'flow-arrow count is monotonically non-decreasing in flow and zero at zero flow', 'arrow density must be a faithful function of the flow it represents', mono && counts[0] === 0 && counts[counts.length - 1] > counts[1], flows.map((q, i) => `${q}→${counts[i].toFixed(2)}`).join('  '));
+
+    // the LV chamber must shrink when LVEDV falls: check the states the demo uses
+    const lvSize = (k: SteadyKey) => Sim.fromSnapshot(SHOCK_PATIENT, fresh[k]).lastBeat!.lvedv;
+    cmp('E13', 'S4 draws a smaller LV than S3 (chamber tracks LVEDV in the same frame)', lvSize('S4'), '<', lvSize('S3'), 'the co-registration claim: unloading is visible as a smaller cavity', true, 0);
+
+    // every causal node that claims an anatomy surface must map to a real part
+    const partErrors: string[] = [];
+    for (const n of Object.values(NODES)) {
+      if (!n.surfaces.includes('anatomy')) continue;
+      if (!NODE_PART[n.id]) partErrors.push(`${n.id} claims the anatomy surface but maps to no structure`);
+    }
+    check('E13', 'every node claiming the anatomy surface maps to a drawable structure', 'WHY highlighting must light up anatomy, not silently skip it', partErrors.length === 0, partErrors.join('; ') || `${Object.values(NODES).filter((n) => n.surfaces.includes('anatomy')).length} anatomy-surfaced nodes mapped`);
+
+    // geometry sanity: paths are well formed and inside the unit box
+    const geoErrors: string[] = [];
+    for (const [name, path] of Object.entries(PATHS)) {
+      if (path.length < 2) geoErrors.push(`${name} has fewer than 2 points`);
+      for (const p of path) {
+        if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) geoErrors.push(`${name} leaves the unit box at (${p.x}, ${p.y})`);
+      }
+      const mid = pointAt(path, 0.5);
+      if (!Number.isFinite(mid.p.x) || !Number.isFinite(mid.angle)) geoErrors.push(`${name} does not sample cleanly`);
+    }
+    check('E13', 'all schematic paths are well formed and inside the unit box', 'the layout scales to any panel size, so it must be normalised', geoErrors.length === 0, geoErrors.join('; ') || `${Object.keys(PATHS).length} paths, ${Object.keys(GEO).length} fixed structures`);
+
+    // the ECMO return must genuinely run retrograde: its last segment points up the aorta
+    const ret = PATHS.ecmoReturn;
+    const lastSeg = ret[ret.length - 1].y - ret[ret.length - 2].y;
+    const desc = PATHS.descending;
+    const descDir = desc[desc.length - 1].y - desc[0].y;
+    check('E13', 'the ECMO return path runs opposite to antegrade aortic flow (retrograde is geometric, not just a label)', 'the retrograde direction is the reason afterload rises; it must be unambiguous on screen', lastSeg < 0 && descDir > 0, `return dy ${lastSeg.toFixed(3)} vs descending dy ${descDir.toFixed(3)}`);
   }
 
   /* Shipped snapshots match the current model */

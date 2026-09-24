@@ -13,7 +13,7 @@ An educational simulator for mechanical circulatory support (IABP, Impella, VA-E
 
 Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-contained file: no install, no server, no network. It works in current Chrome and Edge.
 
-- **Explore:** keys **1–6** select S0–S5. **P** opens the perfusion/unloading plane full-screen. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
+- **Explore:** keys **1–6** select S0–S5. **A** opens the device/anatomy schematic full-screen, **P** the perfusion/unloading plane. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
 - **Resident session:** 10 prediction items, anonymous, about 10 minutes. Each item runs: predict → lock → watch the intervention run (3×) → reveal → pick a mechanism → see the causal chain.
 
 ### Session data
@@ -111,6 +111,53 @@ variable ever changes. S5 is the weaned configuration; it changes two things at 
 is offered as a management step rather than as a comparison.
 
 (Full values in `validation/report.md`.)
+
+### Device / anatomy co-registration
+
+A schematic band under both panes, one heart per reality, so a device setting and its
+mechanical consequence are on screen together. Deliberately schematic rather than
+anatomical: the target is legibility at 1080p after video compression.
+
+**Devices are fixed in position.** The learner changes settings only. Nothing can be placed,
+advanced, positioned or cannulated, and there is no malposition feedback. This is mechanistic
+co-registration, not a placement trainer.
+
+**Everything drawn is a function of simulator state. There is no animation timeline.**
+
+| drawn | driven by | field |
+|---|---|---|
+| LV cavity size | instantaneous cavity volume | `vLv` |
+| Aortic valve leaflets | instantaneous transvalvular flow | `qAortic` |
+| IABP balloon size | instantaneous balloon volume | `vBalloon` |
+| Impella / ECMO / mitral / systemic arrow density | the corresponding instantaneous flow | `qImpella`, `qEcmo`, `qMitral`, `qSvr` |
+| Arrow *position* along every path | cumulative transported volume | `state.cum.*` |
+
+That last row is the part that matters. Arrow motion is not a timer: the model integrates the
+volume each path has actually carried (`state.cum`, on the same fixed 1 ms tick as the
+physiology), and an arrow's position is that volume modulo a spacing constant. Flow doubles,
+arrows move twice as fast, because twice the volume passes. Pause the simulation and the
+picture stops. Being part of sim state, it is deterministic, clone-safe and snapshot-safe.
+
+What each device shows: the **Impella** draws blood from an inlet inside the LV, across the
+valve, to an outlet in the ascending aorta, with the chamber visibly smaller in the same frame
+that LVEDV falls. **VA-ECMO** drains the venous reservoir, crosses the pump, and returns
+**retrograde** up the descending aorta — drawn on the opposite side of the vessel from
+antegrade flow and in the opposite direction, because that opposition is the reason afterload
+rises. The **IABP balloon** inflates and deflates against cardiac phase, so a mistiming is
+visible as motion rather than only as a waveform change. The **aortic valve** leaflets track
+instantaneous transvalvular flow, so the intermittent opening at S4/P5 is visible as
+intermittency.
+
+The band plugs into the same `surfaces` field the causal graph already declared, so **WHY**
+highlighting lights up the relevant structure alongside the waveform, PV loop and numeric
+tiles — the graph remains the single source of truth. Press **A** for a large overlay.
+
+Validation E13 asserts that every animated quantity names a real instantaneous simulator
+field, that the cavity changes size *within* a beat rather than only between states, that
+arrow count is monotonic in flow and zero at zero flow, that S4 draws a smaller LV than S3,
+that every node claiming the anatomy surface maps to a drawable structure, that all paths are
+well formed inside the unit box, and that the ECMO return runs geometrically opposite to
+antegrade aortic flow rather than merely being labelled retrograde.
 
 ### Perfusion / unloading plane
 
@@ -403,6 +450,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E13** The anatomy layer reads only instantaneous simulator fields; the cavity pulsates within a beat; arrow count is monotonic in flow; S4 draws a smaller LV than S3; every anatomy-surfaced node maps to a structure; paths are normalised; the ECMO return is geometrically retrograde.
 - **E12** The perfusion/unloading plane's geometry: S0->S3 right and down, S3->S4 up and not left, per-axis monotonicity, clamping, fixed anchors, and shared fields with the tiles.
 - **E11** Every mapped node and its numeric tile read the same field; every value the WHY ribbon renders is byte-identical to the tile for that pane.
 - **E10** Every WHY target exists in the graph; the graph is structurally sound; and on four canonical transitions the derived chain for each target contradicts no metric.

@@ -38,6 +38,7 @@ import { ecmoFlow } from './devices/ecmo';
 import { svrTarget, WOOD_PER_MMHG_S_ML } from './baroreflex';
 import {
   AV_FRACTION_EMA,
+  CUM_WRAP,
   DIASTOLE_ACTIVATION,
   ML_S_TO_LPM,
   SLEW,
@@ -189,6 +190,7 @@ export class Sim {
       settings: { ...settings },
       baroSensed: 0,
       svr: p.rSvr,
+      cum: { aortic: 0, impella: 0, ecmo: 0, mitral: 0, systemic: 0 },
       iabpNotchMs: null,
       iabpOpenMs: null,
       lastAvClosureMs: null,
@@ -222,7 +224,12 @@ export class Sim {
 
   static fromSnapshot(p: PatientParams, snap: SimSnapshot): Sim {
     const s = new Sim(p, snap.state.settings);
+    const fresh = s.state;
     s.state = structuredClone(snap.state);
+    // Backfill anything a snapshot written by an older build lacks, so a stale
+    // steadyStates.json degrades to a correct-but-unprimed start rather than
+    // crashing the renderer. `npm run snapshots` regenerates it properly.
+    if (!s.state.cum) s.state.cum = { ...fresh.cum };
     s.y.fill(0);
     s.y.set(snap.y);
     s.lastBeat = snap.lastBeat ? { ...snap.lastBeat } : null;
@@ -337,6 +344,16 @@ export class Sim {
       for (let i = 0; i < NY; i++) y[i] += (hs / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
     }
     this.storeY();
+
+    /* 3b. cumulative transported volume, for flow animation that is derived state.
+     *     Uses the tick's own mean flows (the RK4 integrals just accumulated). */
+    const c2 = s.cum;
+    const e = this.last;
+    c2.aortic = (c2.aortic + e.qAortic * dt) % CUM_WRAP;
+    c2.impella = (c2.impella + e.qImpella * dt) % CUM_WRAP;
+    c2.ecmo = (c2.ecmo + e.qEcmo * dt) % CUM_WRAP;
+    c2.mitral = (c2.mitral + e.qMitral * dt) % CUM_WRAP;
+    c2.systemic = (c2.systemic + e.qSvr * dt) % CUM_WRAP;
 
     /* 4. advance the clock; close the beat on the boundary */
     s.tick += 1;

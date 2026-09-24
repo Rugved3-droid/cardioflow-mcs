@@ -142,6 +142,15 @@ export interface SimState {
   baroSensed: number;
   /** current systemic vascular resistance (reflex effector position), mmHg*s/mL */
   svr: number;
+  /**
+   * Cumulative volume transported by each path, mL, wrapped at CUM_WRAP.
+   *
+   * These exist so the anatomy layer can animate flow WITHOUT owning a clock of its
+   * own: an arrow's position along a path is a function of the volume that has
+   * actually passed through it. Integrated on the same fixed tick as the physiology,
+   * so they are deterministic, clone-safe and snapshot-safe.
+   */
+  cum: { aortic: number; impella: number; ecmo: number; mitral: number; systemic: number };
 }
 
 /** Everything evaluated at one instant. Derived only; never integrated. */

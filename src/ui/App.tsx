@@ -12,6 +12,7 @@ import { useWhy } from '../causal/useWhy';
 import { WHY_TARGETS } from '../causal/derive';
 import { ChainRibbon } from './ChainRibbon';
 import { PlanePanel } from './PlanePanel';
+import { AnatomyBand } from './AnatomyBand';
 
 type Mode = 'explore' | 'assess';
 
@@ -21,6 +22,7 @@ export function App() {
   const [mode, setMode] = useState<Mode>('explore');
   const [active, setActive] = useState<TherapyId | null>('S0');
   const [planeBig, setPlaneBig] = useState(false);
+  const [anatBig, setAnatBig] = useState(false);
   const { why, start, stop, activeNode, chainNodes } = useWhy();
   const chainIds = useMemo(() => new Set(chainNodes.map((n) => n.id)), [chainNodes]);
 
@@ -61,6 +63,10 @@ export function App() {
       if (e.key === ' ') {
         engine.paused = !engine.paused;
         e.preventDefault();
+        return;
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        setAnatBig((v) => !v);
         return;
       }
       if (e.key === 'p' || e.key === 'P') {
@@ -114,6 +120,14 @@ export function App() {
         </div>
         <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
       </main>
+      <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} />
+      {anatBig && (
+        <div className="plane-overlay" onClick={() => setAnatBig(false)} role="dialog" aria-label="Device and anatomy schematic">
+          <div className="anat-overlay-inner" onClick={(e) => e.stopPropagation()}>
+            <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} big />
+          </div>
+        </div>
+      )}
       {planeBig && (
         <div className="plane-overlay" onClick={() => setPlaneBig(false)} role="dialog" aria-label="Perfusion versus unloading plane">
           <div onClick={(e) => e.stopPropagation()}>
