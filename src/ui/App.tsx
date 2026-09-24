@@ -7,6 +7,7 @@ import { AssessPanel } from './AssessPanel';
 import { ExploreBar } from './ExploreBar';
 import { useFrameLoop } from './useFrameLoop';
 import { STEADY_LABEL } from './labels';
+import { PHENOTYPE } from '../model/patient';
 
 type Mode = 'explore' | 'assess';
 
@@ -52,7 +53,12 @@ export function App() {
         <div className="brand">
           CARDIOFLOW <span>MCS</span>
         </div>
-        <div className="disclaimer">Educational hemodynamic model · not clinically validated · not for patient care</div>
+        <div className="phenotype" title={PHENOTYPE.summary}>
+          <span className="ph-dot" aria-hidden="true" />
+          {PHENOTYPE.short}
+          <span className="ph-nums">Ees {PHENOTYPE.ees} · Ea/Ees ≈ {PHENOTYPE.eaOverEes} · EF ≈ {PHENOTYPE.ef}%</span>
+        </div>
+        <div className="disclaimer">Educational model · not clinically validated · not for patient care</div>
         <div className="spacer" />
         <div className="clock">
           t <b>{simS.toFixed(1)}</b> s · HR <b>{engine.left.sim.p.hr}</b>

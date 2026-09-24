@@ -17,6 +17,21 @@ export interface PatientParams {
   lvV0: number; // unstressed volume, mL
   lvA: number; // EDPVR scale, mmHg     P_ed = A(e^{B(V-V0)} - 1)
   lvB: number; // EDPVR stiffness, 1/mL
+  /**
+   * EDPVR volume intercept, mL — the volume at which passive pressure is zero.
+   * Physiologically distinct from the ESPVR intercept lvV0 (a dilated, remodelled
+   * ventricle sits on a right-shifted passive curve), so the two are separate
+   * parameters. Sharing one intercept forces the operating point deep onto the
+   * exponential and makes LVEDP hypersensitive to volume.
+   */
+  lvV0ed: number;
+
+  /**
+   * Multiplier on the activation time-base. 1 = default double-Hill timing.
+   * >1 shortens systole, <1 lengthens it. Present so E(t) timing is a sweepable
+   * parameter rather than a buried constant.
+   */
+  actScale: number;
 
   /* RV: same construction; present only to close the loop */
   rvEes: number;

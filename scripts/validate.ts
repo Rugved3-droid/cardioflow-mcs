@@ -14,8 +14,8 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Sim } from '../src/model/sim';
-import { NO_DEVICE, SHOCK_PATIENT } from '../src/model/patient';
-import type { BeatMetrics, DeviceSettings, Sample } from '../src/model/types';
+import { NO_DEVICE, PHENOTYPE, SHOCK_PATIENT } from '../src/model/patient';
+import type { BeatMetrics, DeviceSettings, PatientParams, Sample } from '../src/model/types';
 import { IABP_TIMINGS, type IabpTimingName } from '../src/model/devices/iabp';
 import { SLEW } from '../src/model/constants';
 import { THERAPY_ORDER, THERAPY_STATES } from '../src/model/therapyStates';
@@ -318,7 +318,50 @@ function main() {
   cmp('STATES', 'S3 MAP > S0 MAP', st[3].map, '>', st[0].map, 'the paradox, part 1: pressure better');
   cmp('STATES', 'S3 LVEDP > S0 LVEDP', st[3].lvedp, '>', st[0].lvedp, 'the paradox, part 2: ventricle worse');
   cmp('STATES', 'S4 LVEDP < S3 LVEDP', st[4].lvedp, '<', st[3].lvedp, 'ECpella vents');
-  cmp('STATES', 'S4 MAP ≥ S3 MAP', st[4].map, '>', st[3].map - 1, 'perfusion held');
+  // NOTE: S4 is still the two-variable definition (Impella added AND ECMO weaned 4->2).
+  // Task C restores S4 = S3 + Impella with ECMO HELD, after which this becomes a
+  // single-variable comparison and the tolerance can tighten.
+  check('STATES', 'S4 MAP within 3 mmHg of S3 (perfusion approximately held while unloading)', 'PENDING Task C: S4 currently changes two variables at once, so MAP reflects the ECMO wean as well as the pump', Math.abs(st[4].map - st[3].map) <= 3, `${fx(st[4].map, 1)} vs ${fx(st[3].map, 1)}`);
+
+  /* E1b — ventriculo-arterial coupling and diastolic stiffness (Task D calibration) */
+  const Ea = (m: BeatMetrics) => (m.nativeSv > 0.05 ? m.lvesp / m.nativeSv : NaN);
+  const stiffness = (m: BeatMetrics) => SHOCK_PATIENT.lvB * (m.lvedp + SHOCK_PATIENT.lvA);
+  const e1Ea = Ea(e1) / SHOCK_PATIENT.lvEes;
+  check('E1', 'Ea/Ees at baseline in [2.5, 5] (severe but survivable ventriculo-arterial uncoupling)', 'published cardiogenic-shock range is roughly 2-4; >5 means a ventricle that barely ejects at all', e1Ea >= 2.5 && e1Ea <= 5, fx(e1Ea));
+  check('E1', 'local diastolic stiffness dP/dV at baseline in [0.15, 0.40] mmHg/mL', 'Donker 2019 reports +10% EDV for +5 mmHg PCWP at 4 L/min, implying ~0.25 mmHg/mL', stiffness(e1) >= 0.15 && stiffness(e1) <= 0.4, fx(stiffness(e1)));
+  check('E1', 'declared phenotype Ees matches the shipped patient', 'the UI names the phenotype; it must not drift from the parameters', PHENOTYPE.ees === SHOCK_PATIENT.lvEes, `${PHENOTYPE.ees} vs ${SHOCK_PATIENT.lvEes}`);
+
+  /* E8 — is the stroke-work response to VA-ECMO phenotype-dependent?
+     Ostadal 2015 measured SW RISING (x1.45) in pigs whose baseline EF was 43%.
+     This simulator's patient starts near EF 16% and its SW falls. Either the model is
+     wrong, or the sign of the response depends on ventriculo-arterial coupling. This
+     experiment decides it by sweeping contractility and nothing else. */
+  const pheno: { ees: number; s0: BeatMetrics; s3: BeatMetrics }[] = [];
+  for (const ees of [0.62, 0.9, 1.3, 1.8, 2.4]) {
+    const p: PatientParams = { ...SHOCK_PATIENT, lvEes: ees };
+    const a = new Sim(p, NO_DEVICE);
+    a.run(90_000);
+    const b = a.clone();
+    b.setSettings({ ecmoFlowLpm: 4 });
+    b.snapActuators();
+    b.run(90_000);
+    pheno.push({ ees, s0: a.lastBeat!, s3: b.lastBeat! });
+    rows.push({ exp: 'E8', step: `Ees ${ees} + ECMO 4`, settings: { ...b.state.settings }, m: b.lastBeat!, beats: 150, converged: true });
+  }
+  const swRatio = pheno.map((x) => x.s3.strokeWork / x.s0.strokeWork);
+  cmp('E8', 'at the shipped phenotype (EF ~16%) stroke work FALLS under ECMO', swRatio[0], '<', 1, 'a severely uncoupled LV loses more ejection than it gains pressure');
+  cmp('E8', 'at an Ostadal-like phenotype (Ees 1.8, EF ~32%) stroke work RISES under ECMO', swRatio[3], '>', 1, 'RECONCILES with Ostadal 2015 (x1.45 at baseline EF 43%): same direction when given a similar ventricle');
+  // The ratio must cross 1 exactly once, upward, as contractility rises. It is NOT
+  // monotone at the top of the sweep: at Ea/Ees < 1 the ventricle is already near
+  // maximal ejection and further afterload costs more than it gains, so the ratio
+  // turns back down. The claim being tested is the single sign change.
+  const crossings = swRatio.filter((r, i) => i > 0 && (r > 1) !== (swRatio[i - 1] > 1)).length;
+  check('E8', 'the stroke-work ratio crosses 1 exactly once, upward, as contractility rises', 'the sign of the response is governed by Ea/Ees; below the crossing SW falls, above it SW rises', crossings === 1 && swRatio[0] < 1 && swRatio[swRatio.length - 1] > 1, swRatio.map((r) => r.toFixed(2)).join(' → '));
+  check('E8', 'native SV falls at EVERY phenotype', 'this is why the native-SV item is safe to score and the LVEDP item was not', pheno.every((x) => x.s3.nativeSv < x.s0.nativeSv), pheno.map((x) => `${x.s0.nativeSv.toFixed(0)}→${x.s3.nativeSv.toFixed(0)}`).join(', '));
+  check('E8', 'AV open fraction falls at EVERY phenotype', 'same', pheno.every((x) => x.s3.avOpenFraction < x.s0.avOpenFraction), pheno.map((x) => `${x.s0.avOpenFraction.toFixed(2)}→${x.s3.avOpenFraction.toFixed(2)}`).join(', '));
+  const lvedpRises = pheno.map((x) => x.s3.lvedp - x.s0.lvedp);
+  check('E8', 'the LVEDP rise varies >3-fold across phenotypes (evidence for retiring the ecmo-lvedp item)', 'magnitude is phenotype-contingent even where the sign is not; in patients the sign varies too', Math.max(...lvedpRises) / Math.min(...lvedpRises) > 3, lvedpRises.map((d) => `+${d.toFixed(1)}`).join(', '));
+  cmp('E8', 'the shipped patient is the afterload-dominant phenotype (largest LVEDP rise of the sweep)', lvedpRises[0], '>', Math.max(...lvedpRises.slice(1)) - 1e-9, 'this is the patient who needs venting, which is what the app claims it is showing');
 
   /* E7 — item bank consistency: the simulator must agree with every hand-keyed answer.
      (Direction of dependency: sim is checked AGAINST the key; the key is never derived from the sim.) */

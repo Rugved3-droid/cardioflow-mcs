@@ -67,15 +67,15 @@ interface Eval extends Omit<Sample, 'tick' | 'beat' | 'tickInBeat' | 'phase'> {
 
 function evaluate(y: Float64Array, tInBeat: number, c: Ctx): Eval {
   const p = c.p;
-  const act = activation(tInBeat, c.cycleMs);
+  const act = activation(tInBeat, c.cycleMs, p.actScale);
 
   const vb =
     c.act.iabpFill > 0 && c.notchMs !== null && c.openMs !== null
       ? balloonVolume(tInBeat, c.cycleMs, c.notchMs, c.openMs, c.act.iabpInflateOffsetMs, c.act.iabpDeflateOffsetMs, c.act.iabpFill, c.assistThis, c.assistPrev)
       : 0;
 
-  const pLv = chamberPressure(y[LV], act, p.lvEes, p.lvV0, p.lvA, p.lvB);
-  const pRv = chamberPressure(y[RV], act, p.rvEes, p.rvV0, p.rvA, p.rvB);
+  const pLv = chamberPressure(y[LV], act, p.lvEes, p.lvV0, p.lvA, p.lvB, p.lvV0ed);
+  const pRv = chamberPressure(y[RV], act, p.rvEes, p.rvV0, p.rvA, p.rvB, p.rvV0);
   const pAo = y[AO] / p.cAo;
   const pSa = (y[SA] + vb) / p.cSa;
   const pSv = y[SV] / p.cSv;
@@ -393,7 +393,7 @@ export class Sim {
     }
 
     const esvDisp = Math.max(x.esv - p.lvV0, 0);
-    const pe = Math.max(0.5 * x.esp * esvDisp - edpvrIntegral(x.esv, p.lvA, p.lvB, p.lvV0), 0);
+    const pe = Math.max(0.5 * x.esp * esvDisp - edpvrIntegral(x.esv, p.lvA, p.lvB, p.lvV0ed), 0);
     const sw = y[I_SW];
     const toLpm = (ml: number) => (ml / T) * ML_S_TO_LPM;
     const impLpm = toLpm(y[I_IMP]);

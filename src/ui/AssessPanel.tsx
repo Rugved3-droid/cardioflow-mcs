@@ -15,6 +15,7 @@ import {
 } from '../assessment/sessionStore';
 import { score } from '../assessment/scoring';
 import { STEADY_LABEL } from './labels';
+import { PHENOTYPE_NOTE } from '../model/patient';
 import { fmt } from './metrics';
 
 /** Simulated time the intervention runs before the reveal, and how fast it is shown. */
@@ -25,6 +26,9 @@ type Phase = 'setup' | 'question' | 'running' | 'revealed' | 'mechRevealed' | 'd
 
 const DEFAULT_LABELS: Record<Direction, string> = { rise: 'Rise', fall: 'Fall', unchanged: 'Unchanged' };
 const ORDER: Direction[] = ['rise', 'fall', 'unchanged'];
+
+/** Items about LV loading, where the magnitude (and in patients the sign) is phenotype-contingent. */
+const LOADING_ITEMS = new Set(['ecmo-sv', 'ecmo-av', 'ecpella-lvedp', 'impella-lvedp']);
 
 function labelsFor(item: PredictionItem) {
   return item.optionLabels ?? DEFAULT_LABELS;
@@ -300,6 +304,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
         <div className="row" style={{ marginTop: 10, alignItems: 'flex-end' }}>
           <div>
             <div className="chain">{item.explanation}</div>
+            {LOADING_ITEMS.has(item.id) && <div className="ph-note">{PHENOTYPE_NOTE}</div>}
             <div className="source">Key source: {item.source}</div>
           </div>
           <button className="btn primary" onClick={nextItem}>{idx + 1 < ACTIVE_ITEMS.length ? 'Next item →' : 'Finish & see scorecard'}</button>

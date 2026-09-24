@@ -56,16 +56,16 @@ export function drawPv(ctx: CanvasRenderingContext2D, w: number, h: number, pv: 
   ctx.lineTo(X(Math.min(vTop, PV_AXES.vMax)), Y(p.lvEes * (Math.min(vTop, PV_AXES.vMax) - p.lvV0)));
   ctx.stroke();
   ctx.beginPath();
-  for (let v = p.lvV0; v <= PV_AXES.vMax; v += 2) {
-    const pp = edpvr(v, p.lvA, p.lvB, p.lvV0);
+  for (let v = p.lvV0ed; v <= PV_AXES.vMax; v += 2) {
+    const pp = edpvr(v, p.lvA, p.lvB, p.lvV0ed);
     if (pp > PV_AXES.pMax) break;
-    if (v === p.lvV0) ctx.moveTo(X(v), Y(pp));
+    if (v === p.lvV0ed) ctx.moveTo(X(v), Y(pp));
     else ctx.lineTo(X(v), Y(pp));
   }
   ctx.stroke();
   ctx.fillStyle = faint;
   ctx.fillText('ESPVR', X(p.lvV0 + 55 / p.lvEes) + 6, Y(55));
-  ctx.fillText('EDPVR', X(232), Y(edpvr(232, p.lvA, p.lvB, p.lvV0)) - 16);
+  ctx.fillText('EDPVR', X(232), Y(edpvr(232, p.lvA, p.lvB, p.lvV0ed)) - 16);
 
   const path = (a: Float32Array, n: number) => {
     ctx.beginPath();

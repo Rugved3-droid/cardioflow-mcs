@@ -63,7 +63,7 @@ The code lives in `src/model/`. `Sim.state` is the single source of truth, and e
 | Clock | Fixed **1 ms tick**, integer ticks. HR 100 → 600 ticks per beat exactly. |
 | Integrator | Classical RK4, 4 fixed substeps per tick. No adaptive step, no wall-clock input. |
 | Determinism | Same inputs → byte-identical output **within one JS engine** (checked by SHA-256 in `validate`). `Math.exp`/`Math.pow` are not bit-specified *across* engines, so record the demo in one browser. |
-| LV | Time-varying elastance blending linear ESPVR `Ees(V−V0)` and exponential EDPVR `A(e^{B(V−V0)}−1)` via a normalized double-Hill activation. |
+| LV | Time-varying elastance blending linear ESPVR `Ees(V-V0)` and exponential EDPVR `A(e^{B(V-V0ed)}-1)` via a normalized double-Hill activation. **The ESPVR and EDPVR have separate volume intercepts** (`lvV0` = 40, `lvV0ed` = 53); a dilated, remodelled ventricle sits on a right-shifted passive curve, and sharing one intercept forces the operating point deep onto the exponential. |
 | RV | Same construction. Present only to close the loop. |
 | Systemic | 3-element Windkessel (Rc, C, Rsvr) plus a small proximal aortic capacitance, so the aortic-valve/Impella-outlet node is an ODE state. |
 | Venous | Finite stressed-volume reservoir (C = 120 mL/mmHg). |
@@ -90,17 +90,79 @@ MAP, SBP, DBP, pulse pressure, peak diastolic (augmented) pressure, aortic EDP a
 
 ### The patient and the five states
 
+**Phenotype: low-contractility, afterload-dominant LV failure** - Ees 0.62 mmHg/mL, Ea/Ees ~ 4.0, EF ~ 16%. A severely uncoupled ventricle that cannot eject against added arterial pressure: the patient in whom VA-ECMO distends the LV, and therefore a candidate for venting. The label is shown in the app, and the harness fails if it drifts from the shipped parameters.
+
+**This is one phenotype, not all of them.** How far VA-ECMO raises LV filling pressure depends on the ventricle (see "LV afterload response calibration" below). The app says so wherever it reports an LV-loading result, rather than implying that ECMO always distends.
+
 The parameters (`src/model/patient.ts`) were tuned by hand so that S0 lands in a textbook SCAI C–D cardiogenic-shock profile. They were **not fitted to any patient or dataset.**
 
-| State | MAP | LVEDP | Total flow | Native SV | AV open |
-|---|---:|---:|---:|---:|---:|
-| S0 Shock, no support | 54 | 22 | 2.6 L/min | 26 mL | 28% |
-| S1 IABP 1:1 | 63 | 18 | 3.1 | 31 | |
-| S2 Impella P8 | 72 | 13 | 3.6 | 0 | 0% |
-| S3 VA-ECMO 4 L/min | 81 | **40** | 4.6 | 6 | 14% |
-| S4 ECpella (Impella P8 + ECMO weaned to 2) | 94 | **17** | 5.2 | 0 | 0% |
+| State | MAP | LVEDP | LVEDV | Native SV | Total flow | AV open |
+|---|---:|---:|---:|---:|---:|---:|
+| S0 Shock, no support | 62 | 20 | 188 | 30 mL | 3.0 L/min | 27% |
+| S1 IABP 1:1 | 68 | 17 | 177 | 33 | 3.3 | 30% |
+| S2 Impella P8 | 74 | 14 | 162 | 0 | 3.7 | 0% |
+| S3 VA-ECMO 4 L/min | 99 | **33** | 229 | 15 | 5.5 | 18% |
+| S4 ECpella (Impella P8 + ECMO weaned to 2) | 97 | **18** | 180 | 0 | 5.2 | 0% |
+
+MAP at S3/S4 is too high because there is **no baroreflex yet** - added circuit flow has
+nowhere to go but pressure. That is the next piece of work, and the LVEDP rise at S3
+(+13 mmHg) is expected to fall to roughly +7 once it lands.
 
 (Full values in `validation/report.md`.)
+
+### LV afterload response calibration
+
+The first build's ventricle over-responded to afterload. Two external anchors said so:
+Ostadal 2015 measured stroke work **rising** (x1.45) as porcine ECMO flow went 1->5 L/min,
+where this model's fell x0.25; and Donker 2019 reports +5 mmHg PCWP and +10% EDV at
+4 L/min, where this model gave +18 mmHg LVEDP.
+
+A one-at-a-time sensitivity sweep at S3 (`npx tsx scripts/coupling.ts`) found the culprits,
+and ruled some out. Elasticities (% change in output per % change in parameter):
+
+| Parameter | on stroke work | on LVEDP |
+|---|---:|---:|
+| EDPVR `B` | **-7.4** | +0.69 |
+| `Ees` | **+6.2** | -0.64 |
+| `Rsvr` | **-3.8** | +0.51 |
+| `Rc` | -0.17 | +0.02 |
+| E(t) timing (`actScale`) | -0.17 | +0.02 |
+| `Csa` | +0.06 | -0.03 |
+
+So characteristic impedance, arterial compliance and the E(t) waveform were **not**
+involved. Two faults were:
+
+1. **Diastolic operating point.** ESPVR and EDPVR shared one volume intercept, putting the
+   passive curve at e^4.0 at EDV 195. Local stiffness `dP/dV = B(P+A)` was 0.58 mmHg/mL at
+   S0 and 1.04 at S3, against the ~0.25 implied by Donker. Fixed by separating the
+   intercepts and re-fitting: `A` 0.4 -> 8.0, `B` 0.026 -> 0.0093, `V0ed` = 53. Stiffness is
+   now 0.26 mmHg/mL and the harness enforces 0.15-0.40.
+2. **Ventriculo-arterial coupling.** Ea/Ees was 5.0 at S0 and **29.4** at S3 (EF 2.7%) - a
+   mechanically arrested ventricle, which is what collapsed stroke work. `Ees` 0.5 -> 0.62
+   brings S0 to Ea/Ees 4.0, inside the published cardiogenic-shock range, and the harness
+   enforces 2.5-5.
+
+Stroke work at S3 is now x0.74 rather than x0.25.
+
+**Does the model contradict Ostadal?** No - it reproduces their direction when given their
+ventricle. Sweeping contractility and nothing else (validation E8):
+
+| Ees | baseline EF | Ea/Ees | stroke work ratio at ECMO 4 | LVEDP rise |
+|---:|---:|---:|---:|---:|
+| 0.62 (shipped) | 16% | 4.0 | **0.74** (falls) | +12.9 |
+| 0.90 | 21% | 2.7 | 1.05 | +9.5 |
+| 1.30 | 26% | 1.8 | 1.26 | +6.6 |
+| 1.80 | 32% | 1.3 | **1.28** (rises) | +3.9 |
+| 2.40 | 37% | 0.9 | 1.23 | +2.1 |
+
+The ratio crosses 1 exactly once, near Ea/Ees ~ 2.5. Ostadal's pigs began at EF 43%, well
+above that crossing, and measured x1.45; this model at EF 32% gives x1.28. **Same
+direction, comparable magnitude, different patient.** The divergence is a phenotype
+difference, not a modelling error, and E8 fails the build if that stops being true.
+
+The same sweep is why the `ecmo-lvedp` assessment item was retired: the LVEDP rise varies
+more than sixfold across plausible contractilities (+2.1 to +12.9 mmHg) while native SV and
+aortic-valve opening fall at **every** phenotype.
 
 ### Design decisions that differ from the original spec
 
@@ -118,13 +180,14 @@ No baroreflex or autoregulation. No drugs (by design). The RV is minimal. No aor
 
 **These are internal implementation sanity checks, NOT validation against clinical data.** They confirm that the model moves in the directions its equations should produce, never enters an impossible state, and agrees with the hand-keyed answers.
 
-- **E1** Baseline lands inside the shock design targets.
+- **E1** Baseline lands inside the shock design targets, with Ea/Ees in 2.5-5, diastolic stiffness in 0.15-0.40 mmHg/mL, and the declared phenotype matching the shipped parameters.
 - **E2** ECMO ramp 0→4: native SV↓, LVEDP↑, LVEDV↑, AV-open↓, MAP↑, total flow↑, PVA↑, all strictly monotone.
 - **E3** Impella P0→P8: LVEDP↓, LVEDV↓, PVA↓, pump flow↑, total flow↑, native SV↓.
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
-- **E7** The simulator agrees with the answer key for all 10 items.
+- **E7** The simulator agrees with the answer key for every active item, and retired items are excluded from the learner-facing bank.
+- **E8** The stroke-work response to VA-ECMO changes sign with contractility, reconciling this model with Ostadal 2015; native SV and AV opening fall at every phenotype; the shipped patient is the afterload-dominant one.
 - **Every tick of every run:** no NaN/Inf, no negative volume, no P_LV > P_Ao while the AV is flagged closed, volume conserved, slew limits respected. Beat-to-beat continuity is checked during every ramp.
 - **Determinism:** two identical runs hash identically, lockstepped clones stay bit-identical, and the shipped snapshots equal a fresh recomputation.
 

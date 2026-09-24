@@ -26,20 +26,21 @@ function scaleFor(cycleMs: number): number {
 }
 
 const peakCache = new Map<number, number>();
-function peakFor(cycleMs: number): number {
-  const hit = peakCache.get(cycleMs);
+function peakForScale(s: number): number {
+  const key = Math.round(s * 1e6);
+  const hit = peakCache.get(key);
   if (hit !== undefined) return hit;
-  const s = scaleFor(cycleMs);
   let peak = 0;
   for (let i = 0; i <= 4000; i++) peak = Math.max(peak, rawHill(i / 4000, s));
-  peakCache.set(cycleMs, peak);
+  peakCache.set(key, peak);
   return peak;
 }
 
 /** Normalized activation at time tMs (possibly fractional) into a beat of cycleMs. */
-export function activation(tMs: number, cycleMs: number): number {
+export function activation(tMs: number, cycleMs: number, actScale = 1): number {
   const phase = tMs / cycleMs;
-  return rawHill(phase, scaleFor(cycleMs)) / peakFor(cycleMs);
+  const s = scaleFor(cycleMs) * actScale;
+  return rawHill(phase, s) / peakForScale(s);
 }
 
 export function edpvr(v: number, a: number, b: number, v0: number): number {
@@ -53,8 +54,9 @@ export function chamberPressure(
   v0: number,
   a: number,
   b: number,
+  v0ed: number,
 ): number {
-  return act * ees * (v - v0) + (1 - act) * edpvr(v, a, b, v0);
+  return act * ees * (v - v0) + (1 - act) * edpvr(v, a, b, v0ed);
 }
 
 /** Area under the EDPVR from V0 to V (analytic), mmHg*mL. Used for PVA potential energy. */
