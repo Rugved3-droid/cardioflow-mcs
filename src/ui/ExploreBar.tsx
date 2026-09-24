@@ -28,7 +28,10 @@ export function ExploreBar({ engine, active, onState }: Props) {
             {id} {THERAPY_STATES[id].short}
           </button>
         ))}
-        <span className="muted small">Press 1–5: B takes the new therapy, A continues the previous one.</span>
+        <button className={`btn state ${active === 'S5' ? 'on' : ''}`} onClick={() => onState('S5')} title={THERAPY_STATES.S5.name}>
+          <kbd>6</kbd>S5 WEANED
+        </button>
+        <span className="muted small">Press 1–5: B takes the new therapy, A continues the previous one. S4 differs from S3 by the pump alone.</span>
       </div>
       <div className="row">
         <span className="small muted mono">B CONTROLS</span>

@@ -45,6 +45,21 @@ export interface PatientParams {
   rTricuspid: number;
   rPulmonic: number;
 
+  /* --- arterial baroreflex (acts on SVR only; see README "Baroreflex") --- */
+  /** false pins SVR at rSvr, reproducing the open-loop model. */
+  baroEnabled: boolean;
+  /** pressure the reflex defends, mmHg */
+  baroSetpoint: number;
+  /** sigmoid width, mmHg. Smaller = higher gain. */
+  baroK: number;
+  /** effector bounds, mmHg*s/mL: fully dilated and fully constricted */
+  svrMin: number;
+  svrMax: number;
+  /** baroreceptor sensing lag, s */
+  baroSenseTau: number;
+  /** vascular effector lag, s */
+  baroEffectorTau: number;
+
   /* systemic 3-element Windkessel (Rc, C, Rsvr) + small proximal aortic capacitance */
   cAo: number; // proximal aortic root capacitance (makes the AV/Impella-outlet node an ODE state)
   rc: number; // characteristic impedance
@@ -123,6 +138,10 @@ export interface SimState {
   lastAvOpeningMs: number | null;
   /** temporally smoothed aortic-valve open fraction (EMA across beats) */
   avOpenFractionSmoothed: number;
+  /** low-pass sensed arterial pressure driving the baroreflex, mmHg */
+  baroSensed: number;
+  /** current systemic vascular resistance (reflex effector position), mmHg*s/mL */
+  svr: number;
 }
 
 /** Everything evaluated at one instant. Derived only; never integrated. */
@@ -211,4 +230,9 @@ export interface BeatMetrics {
   impellaSuction: boolean;
   ecmoDrainageLimited: boolean;
   iabpFill: number;
+
+  /** mean systemic vascular resistance over the beat, mmHg*s/mL (reflex output) */
+  svr: number;
+  /** the same in Wood units, for display */
+  svrWood: number;
 }

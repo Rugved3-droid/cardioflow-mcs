@@ -106,7 +106,7 @@ export function Pane({ side, engine, register, version: _v }: Props) {
           <Num d={M.av} v={val(m, M.av)} />
           <Num d={M.pva} v={val(m, M.pva)} />
           <Num d={M.dpti} v={val(m, M.dpti)} />
-          <Num d={M.lap} v={val(m, M.lap)} />
+          <Num d={M.svr} v={val(m, M.svr)} />
         </div>
       </div>
     </section>

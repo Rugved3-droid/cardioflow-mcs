@@ -29,6 +29,7 @@ export const M: Record<string, MetricDef> = {
   sbp: { key: 'sbp', label: 'SBP', unit: 'mmHg', digits: 0, same: 1, span: 40 },
   dbp: { key: 'dbp', label: 'DBP', unit: 'mmHg', digits: 0, same: 1, span: 40 },
   pdp: { key: 'peakDiastolicP', label: 'Peak diast.', unit: 'mmHg', digits: 0, same: 1, span: 30 },
+  svr: { key: 'svrWood', label: 'SVR', unit: 'WU', digits: 1, same: 0.3, span: 8 },
 };
 
 export function val(m: BeatMetrics | null, d: MetricDef): number {
@@ -43,4 +44,4 @@ export function fmt(x: number, digits: number): string {
   return r === '-0' || r === '-0.0' ? r.slice(1) : r;
 }
 
-export const DELTA_KEYS = ['map', 'total', 'lvedp', 'lvedv', 'nativeSv', 'av', 'pva', 'dpti'] as const;
+export const DELTA_KEYS = ['map', 'total', 'svr', 'lvedp', 'lvedv', 'nativeSv', 'av', 'pva'] as const;

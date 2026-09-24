@@ -35,6 +35,7 @@ import { activation, chamberPressure, edpvrIntegral } from './ventricle';
 import { balloonVolume, FALLBACK_NOTCH_FRACTION, FALLBACK_OPEN_FRACTION } from './devices/iabp';
 import { impellaFlow } from './devices/impella';
 import { ecmoFlow } from './devices/ecmo';
+import { svrTarget, WOOD_PER_MMHG_S_ML } from './baroreflex';
 import {
   AV_FRACTION_EMA,
   DIASTOLE_ACTIVATION,
@@ -48,11 +49,13 @@ import { NO_DEVICE } from './patient';
 /* y-vector layout: 7 volumes, then per-beat integrals (reset each beat) */
 const LV = 0, RV = 1, AO = 2, SA = 3, SV = 4, PA = 5, PV = 6;
 const I_AV = 7, I_IMP = 8, I_ECMO = 9, I_SW = 10, I_DPTI = 11, I_PAO = 12, I_AVOPEN = 13,
-  I_PPV = 14, I_PSV = 15, I_PPA = 16;
-const NY = 17;
+  I_PPV = 14, I_PSV = 15, I_PPA = 16, I_SVR = 17;
+const NY = 18;
 
 interface Ctx {
   p: PatientParams;
+  /** operating systemic vascular resistance this tick (reflex effector) */
+  svr: number;
   act: Actuators;
   cycleMs: number;
   notchMs: number | null;
@@ -88,7 +91,7 @@ function evaluate(y: Float64Array, tInBeat: number, c: Ctx): Eval {
   const qTricuspid = pSv > pRv ? (pSv - pRv) / p.rTricuspid : 0;
   const qPulmonic = pRv > pPa ? (pRv - pPa) / p.rPulmonic : 0;
   const qRc = (pAo - pSa) / p.rc;
-  const qSvr = (pSa - pSv) / p.rSvr;
+  const qSvr = (pSa - pSv) / c.svr;
   const qPvr = (pPa - pPv) / p.rPvr;
   const qBronchial = (pSa - pPv) / p.rBronchial;
 
@@ -114,6 +117,7 @@ function evaluate(y: Float64Array, tInBeat: number, c: Ctx): Eval {
   dy[I_PPV] = pPv;
   dy[I_PSV] = pSv;
   dy[I_PPA] = pPa;
+  dy[I_SVR] = c.svr;
 
   return {
     dy,
@@ -183,6 +187,8 @@ export class Sim {
       v,
       act: { iabpFill: 0, iabpInflateOffsetMs: settings.iabpInflateOffsetMs, iabpDeflateOffsetMs: settings.iabpDeflateOffsetMs, impellaLevel: 0, ecmoFlowLpm: 0 },
       settings: { ...settings },
+      baroSensed: 0,
+      svr: p.rSvr,
       iabpNotchMs: null,
       iabpOpenMs: null,
       lastAvClosureMs: null,
@@ -268,6 +274,7 @@ export class Sim {
       p: this.p,
       act: s.act,
       cycleMs: this.cycleMs,
+      svr: s.svr,
       notchMs: s.iabpNotchMs,
       openMs: s.iabpOpenMs,
       assistThis: s.beat % r === 0,
@@ -299,6 +306,15 @@ export class Sim {
       s.iabpNotchMs = null;
       s.iabpOpenMs = null;
     }
+
+    /* 1b. baroreflex: sense arterial pressure, drive SVR toward its target.
+     *     Integrated on the same fixed tick as everything else. */
+    const dt = TICK_MS / 1000;
+    const pAoNow = this.y[AO] / this.p.cAo;
+    if (s.baroSensed === 0) s.baroSensed = pAoNow;
+    s.baroSensed += ((pAoNow - s.baroSensed) * dt) / this.p.baroSenseTau;
+    const tgt = svrTarget(s.baroSensed, this.p);
+    s.svr += ((tgt - s.svr) * dt) / this.p.baroEffectorTau;
 
     /* 2. sample the state at this tick and fold it into the beat */
     this.accumulate(this.sampleNow());
@@ -435,6 +451,8 @@ export class Sim {
       impellaSuction: x.suction,
       ecmoDrainageLimited: x.drainLimited,
       iabpFill: s.act.iabpFill,
+      svr: y[I_SVR] / T,
+      svrWood: (y[I_SVR] / T) * WOOD_PER_MMHG_S_ML,
     };
     for (let i = 7; i < NY; i++) y[i] = 0;
     this.ex = new BeatExtrema();

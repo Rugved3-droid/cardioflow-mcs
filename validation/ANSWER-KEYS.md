@@ -22,7 +22,7 @@ Please mark each row **agree / disagree / reword** and return.
 | 6 | VA-ECMO started at 4 L/min | Mean arterial pressure | **RISE** | Circuit flow is added to the arterial tree | VERIFIED |
 | 7 | VA-ECMO flow 2 → 4 L/min | Native LV stroke volume | **FALL** | Higher circuit flow raises aortic pressure, so the weak LV ejects less against it | VERIFIED |
 | 8 | VA-ECMO flow 2 → 4 L/min | Aortic valve opening | **Opens less** | LV pressure spends less of the cycle above the raised aortic pressure | VERIFIED |
-| 9 | Impella P8 added to VA-ECMO; ECMO weaned 4 → 2 L/min | LVEDP | **FALL** | The Impella empties the LV into the aorta without the LV having to open its valve | VERIFIED |
+| 9 | Impella P5 added to VA-ECMO, circuit flow HELD at 4 L/min | LVEDP | **FALL** | The Impella empties the LV into the aorta without the LV having to open its valve | VERIFIED |
 
 ## Basis for each key
 
@@ -84,10 +84,10 @@ Please mark each row **agree / disagree / reword** and return.
 
 ### ecpella-lvedp — ECpella
 
-- **Stem:** Impella P8 added to VA-ECMO; ECMO weaned 4 → 2 L/min. *LVEDP* will: **FALL**
+- **Stem:** Impella P5 added to VA-ECMO, circuit flow HELD at 4 L/min. *LVEDP* will: **FALL**
 - **Causal chain shown after reveal:** Pump removes blood from the LV regardless of the valve → LV volume ↓ → LVEDP ↓, while total systemic flow is preserved by pump + circuit.
 - **Cited:** Burkhoff et al., JACC 2015; Donker et al., ASAIO J 2019 (simulation); Ezad et al., Circulation 2023
-- **Basis:** VERIFIED as direction. A transvalvular pump removes LV volume irrespective of the aortic valve, so LVEDP falls from wherever it started [BURKHOFF15]; quantified in a closed-loop human simulation [DONKER19] and the basis of the venting literature [EZAD23][SCHRAGE18]. [PAPPA17] supports clinical use and outcomes, NOT the hemodynamic direction. CONFOUND (pre-Task-C): as shipped this item changed two variables at once (added Impella AND weaned ECMO 4->2). Fixed when S4 was restored to ECMO-held.
+- **Basis:** VERIFIED as direction. A transvalvular pump removes LV volume irrespective of the aortic valve, so LVEDP falls from wherever it started [BURKHOFF15]; quantified in a closed-loop human simulation [DONKER19] and the basis of the venting literature [EZAD23][SCHRAGE18]. [PAPPA17] supports clinical use and outcomes, NOT the hemodynamic direction. Single-variable since Task C: the circuit is held at 4 L/min and only the pump is added, so the comparison isolates venting from circuit flow.
 
 ## Retired items (NOT shown to learners, NOT scored)
 

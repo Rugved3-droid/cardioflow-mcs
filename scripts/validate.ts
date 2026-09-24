@@ -18,7 +18,7 @@ import { NO_DEVICE, PHENOTYPE, SHOCK_PATIENT } from '../src/model/patient';
 import type { BeatMetrics, DeviceSettings, PatientParams, Sample } from '../src/model/types';
 import { IABP_TIMINGS, type IabpTimingName } from '../src/model/devices/iabp';
 import { SLEW } from '../src/model/constants';
-import { THERAPY_ORDER, THERAPY_STATES } from '../src/model/therapyStates';
+import { ALL_THERAPY_IDS, THERAPY_STATES } from '../src/model/therapyStates';
 import { computeAllSteadyStates } from '../src/model/steadyStates';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
@@ -296,7 +296,10 @@ function main() {
   cmp('E6', 'early inflation: native SV lower than correct', ei.nativeSv, '<', c.nativeSv, 'balloon inflates against the ejecting LV: premature AV closure');
   cmp('E6', 'early inflation: LVESV higher than correct', ei.lvesv, '>', c.lvesv, 'ejection truncated', true, 1);
   cmp('E6', 'early inflation: premature AV closure (closes earlier than with correct timing)', ei.avCloseMs ?? 0, '<', c.avCloseMs ?? 0, 'balloon pressure exceeds LV pressure before ejection is complete', true, 0);
-  divergence('E6', 'early inflation: PVA higher than correct', ei.pva, '>', c.pva, 'Textbook: ↑afterload ⇒ ↑MVO2. Model: PE rises but ejection starts earlier (lower AoEDP after the longer inflation) and ends earlier, so loop area falls more; net PVA ≈ −1.5%. SV↓/ESV↑/EDV↑ are reproduced.', 0);
+  // Was a documented divergence in the first build (net PVA came out ~1.5% LOW). The
+  // Task D recalibration reproduced it, so it is a gating check again rather than a
+  // permanent exception.
+  cmp('E6', 'early inflation: PVA higher than correct', ei.pva, '>', c.pva, 'textbook: premature valve closure raises end-systolic volume and pressure, so myocardial oxygen demand rises', true, 0);
   cmp('E6', 'late inflation: peak diastolic pressure lower than correct', li.peakDiastolicP, '<', c.peakDiastolicP, 'part of the diastolic window is lost');
   cmp('E6', 'late inflation: DPTI lower than correct', li.dpti, '<', c.dpti, 'less augmentation time');
   cmp('E6', 'early deflation: aortic EDP higher than correct', ed.aorticEdp, '>', c.aorticEdp, 'aortic pressure recovers before ejection: afterload reduction lost');
@@ -309,7 +312,7 @@ function main() {
   cmp('E6', 'SPEC-LITERAL: correct stroke work < early-inflation stroke work', c.strokeWork, '<', ei.strokeWork, 'DISPUTED: early inflation cuts SV, so SW (loop area) tends to FALL; PVA is the O2-demand index', false, 0);
 
   /* Five therapy states (for README/plane normalization) */
-  for (const id of THERAPY_ORDER) {
+  for (const id of ALL_THERAPY_IDS) {
     const s = base.clone();
     s.setSettings(THERAPY_STATES[id].settings);
     record('STATES', `${id} ${THERAPY_STATES[id].name}`, s, settle(s, `STATES/${id}`));
@@ -318,10 +321,14 @@ function main() {
   cmp('STATES', 'S3 MAP > S0 MAP', st[3].map, '>', st[0].map, 'the paradox, part 1: pressure better');
   cmp('STATES', 'S3 LVEDP > S0 LVEDP', st[3].lvedp, '>', st[0].lvedp, 'the paradox, part 2: ventricle worse');
   cmp('STATES', 'S4 LVEDP < S3 LVEDP', st[4].lvedp, '<', st[3].lvedp, 'ECpella vents');
-  // NOTE: S4 is still the two-variable definition (Impella added AND ECMO weaned 4->2).
-  // Task C restores S4 = S3 + Impella with ECMO HELD, after which this becomes a
-  // single-variable comparison and the tolerance can tighten.
-  check('STATES', 'S4 MAP within 3 mmHg of S3 (perfusion approximately held while unloading)', 'PENDING Task C: S4 currently changes two variables at once, so MAP reflects the ECMO wean as well as the pump', Math.abs(st[4].map - st[3].map) <= 3, `${fx(st[4].map, 1)} vs ${fx(st[3].map, 1)}`);
+  cmp('STATES', 'S4 MAP ≥ S3 MAP (perfusion held while unloading)', st[4].map, '>', st[3].map, 'the pump adds forward flow on top of unchanged circuit flow');
+  check('STATES', 'S4 differs from S3 by exactly one device variable', 'the S3→S4 comparison is only a counterfactual if one thing changes', (() => {
+    const a = THERAPY_STATES.S3.settings as unknown as Record<string, unknown>;
+    const b = THERAPY_STATES.S4.settings as unknown as Record<string, unknown>;
+    const diff = Object.keys(a).filter((k) => a[k] !== b[k]);
+    return diff.length === 1 && diff[0] === 'impellaLevel';
+  })(), Object.keys(THERAPY_STATES.S3.settings).filter((k) => (THERAPY_STATES.S3.settings as unknown as Record<string, unknown>)[k] !== (THERAPY_STATES.S4.settings as unknown as Record<string, unknown>)[k]).join(', ') || 'none');
+  cmp('STATES', 'S4 keeps the aortic valve intermittently opening (demo legibility)', st[4].avOpenFraction, '>', 0.02, 'at maximal pump speed native ejection stops entirely, which on camera reads as arrest rather than unloading', true, 3);
 
   /* E1b — ventriculo-arterial coupling and diastolic stiffness (Task D calibration) */
   const Ea = (m: BeatMetrics) => (m.nativeSv > 0.05 ? m.lvesp / m.nativeSv : NaN);
@@ -432,7 +439,7 @@ function main() {
 const COLS: (keyof BeatMetrics)[] = [
   'map', 'sbp', 'dbp', 'pulsePressure', 'peakDiastolicP', 'aorticEdp', 'lvedp', 'lvedv', 'lvesv', 'lvesp', 'ef',
   'nativeSv', 'nativeCoLpm', 'impellaLpm', 'ecmoLpm', 'totalFlowLpm', 'avOpenFraction', 'strokeWork', 'pe', 'pva', 'dpti',
-  'lapMean', 'rapMean', 'paMean', 'impellaSuction', 'ecmoDrainageLimited',
+  'lapMean', 'rapMean', 'paMean', 'svr', 'svrWood', 'impellaSuction', 'ecmoDrainageLimited',
 ];
 
 function writeOutputs(wallMs: number) {
@@ -462,7 +469,7 @@ function writeOutputs(wallMs: number) {
     ['map', 'MAP', 1], ['sbp', 'SBP', 1], ['dbp', 'DBP', 1], ['peakDiastolicP', 'PDP', 1], ['aorticEdp', 'AoEDP', 1],
     ['lvedp', 'LVEDP', 1], ['lvedv', 'LVEDV', 0], ['lvesv', 'LVESV', 0], ['nativeSv', 'SV', 1], ['nativeCoLpm', 'CO', 2],
     ['impellaLpm', 'Imp', 2], ['ecmoLpm', 'ECMO', 2], ['totalFlowLpm', 'Total', 2], ['avOpenFraction', 'AVopen', 3],
-    ['strokeWork', 'SW', 0], ['pva', 'PVA', 0], ['dpti', 'DPTI', 2], ['lapMean', 'LAP', 1], ['rapMean', 'RAP', 1],
+    ['strokeWork', 'SW', 0], ['pva', 'PVA', 0], ['dpti', 'DPTI', 2], ['lapMean', 'LAP', 1], ['rapMean', 'RAP', 1], ['svrWood', 'SVR_WU', 1],
   ];
   const exps = [...new Set(rows.map((r) => r.exp))];
   md.push('Units: pressures mmHg, volumes mL, flows L/min, SW/PVA mmHg·mL, DPTI mmHg·s per beat, AVopen = fraction of cycle the aortic valve is open (EMA-smoothed).');

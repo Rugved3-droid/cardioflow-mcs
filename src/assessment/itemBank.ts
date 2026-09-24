@@ -41,6 +41,7 @@
 import type { BeatMetrics, DeviceSettings } from '../model/types';
 import type { SteadyKey } from '../model/steadyStates';
 import { IABP_TIMINGS } from '../model/devices/iabp';
+import { ECMO_STANDARD_LPM, IMPELLA_ECPELLA_LEVEL } from '../model/therapyStates';
 
 export type Construct =
   | 'ecmo_perfusion'
@@ -353,19 +354,19 @@ export const ITEM_BANK: PredictionItem[] = [
     id: 'ecpella-lvedp',
     active: true,
     verification:
-      `VERIFIED as direction. A transvalvular pump removes LV volume irrespective of the aortic valve, so LVEDP falls from wherever it started [BURKHOFF15]; quantified in a closed-loop human simulation [DONKER19] and the basis of the venting literature [EZAD23][SCHRAGE18]. [PAPPA17] supports clinical use and outcomes, NOT the hemodynamic direction. CONFOUND (pre-Task-C): as shipped this item changed two variables at once (added Impella AND weaned ECMO 4->2). Fixed when S4 was restored to ECMO-held.`,
+      `VERIFIED as direction. A transvalvular pump removes LV volume irrespective of the aortic valve, so LVEDP falls from wherever it started [BURKHOFF15]; quantified in a closed-loop human simulation [DONKER19] and the basis of the venting literature [EZAD23][SCHRAGE18]. [PAPPA17] supports clinical use and outcomes, NOT the hemodynamic direction. Single-variable since Task C: the circuit is held at 4 L/min and only the pump is added, so the comparison isolates venting from circuit flow.`,
     construct: 'ecpella',
     competency: true,
     from: 'S3',
-    to: { impellaLevel: 8, ecmoFlowLpm: 2 },
-    intervention: 'Impella P8 added to VA-ECMO; ECMO weaned 4 → 2 L/min',
+    to: { impellaLevel: IMPELLA_ECPELLA_LEVEL, ecmoFlowLpm: ECMO_STANDARD_LPM },
+    intervention: `Impella P${IMPELLA_ECPELLA_LEVEL} added to VA-ECMO, circuit flow HELD at ${ECMO_STANDARD_LPM} L/min`,
     variable: 'LVEDP',
     correct: 'fall',
     mechanism: {
       stem: 'Which mechanism?',
       options: [
         'The Impella raises aortic pressure further, closing the valve',
-        'ECMO weaning alone restores native ejection',
+        'Weaning the circuit alone restores native ejection',
         'The Impella empties the LV into the aorta without the LV having to open its valve',
         'The Impella lowers right atrial pressure',
       ],

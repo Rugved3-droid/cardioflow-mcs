@@ -13,7 +13,7 @@ An educational simulator for mechanical circulatory support (IABP, Impella, VA-E
 
 Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-contained file: no install, no server, no network. It works in current Chrome and Edge.
 
-- **Explore:** keys **1–5** select S0–S4. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
+- **Explore:** keys **1–6** select S0–S5. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
 - **Resident session:** 10 prediction items, anonymous, about 10 minutes. Each item runs: predict → lock → watch the intervention run (3×) → reveal → pick a mechanism → see the causal chain.
 
 ### Session data
@@ -65,7 +65,7 @@ The code lives in `src/model/`. `Sim.state` is the single source of truth, and e
 | Determinism | Same inputs → byte-identical output **within one JS engine** (checked by SHA-256 in `validate`). `Math.exp`/`Math.pow` are not bit-specified *across* engines, so record the demo in one browser. |
 | LV | Time-varying elastance blending linear ESPVR `Ees(V-V0)` and exponential EDPVR `A(e^{B(V-V0ed)}-1)` via a normalized double-Hill activation. **The ESPVR and EDPVR have separate volume intercepts** (`lvV0` = 40, `lvV0ed` = 53); a dilated, remodelled ventricle sits on a right-shifted passive curve, and sharing one intercept forces the operating point deep onto the exponential. |
 | RV | Same construction. Present only to close the loop. |
-| Systemic | 3-element Windkessel (Rc, C, Rsvr) plus a small proximal aortic capacitance, so the aortic-valve/Impella-outlet node is an ODE state. |
+| Systemic | 3-element Windkessel (Rc, C, Rsvr) plus a small proximal aortic capacitance, so the aortic-valve/Impella-outlet node is an ODE state. Rsvr is set by the baroreflex (below), not fixed. |
 | Venous | Finite stressed-volume reservoir (C = 120 mL/mmHg). |
 | Pulmonary | PA compliance, PVR, pulmonary-venous/LA compliance. |
 | Bronchial/Thebesian return | Systemic arteries → LA, bypassing the RV. This is a real path, and it keeps filling the LV even when the AV is closed. |
@@ -96,19 +96,72 @@ MAP, SBP, DBP, pulse pressure, peak diastolic (augmented) pressure, aortic EDP a
 
 The parameters (`src/model/patient.ts`) were tuned by hand so that S0 lands in a textbook SCAI C–D cardiogenic-shock profile. They were **not fitted to any patient or dataset.**
 
-| State | MAP | LVEDP | LVEDV | Native SV | Total flow | AV open |
-|---|---:|---:|---:|---:|---:|---:|
-| S0 Shock, no support | 62 | 20 | 188 | 30 mL | 3.0 L/min | 27% |
-| S1 IABP 1:1 | 68 | 17 | 177 | 33 | 3.3 | 30% |
-| S2 Impella P8 | 74 | 14 | 162 | 0 | 3.7 | 0% |
-| S3 VA-ECMO 4 L/min | 99 | **33** | 229 | 15 | 5.5 | 18% |
-| S4 ECpella (Impella P8 + ECMO weaned to 2) | 97 | **18** | 180 | 0 | 5.2 | 0% |
+| State | MAP | LVEDP | LVEDV | Native SV | Total flow | AV open | SVR |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| S0 Shock, no support | 62 | 20 | 188 | 30 mL | 3.0 L/min | 27% | 15.8 WU |
+| S1 IABP 1:1 | 66 | 17 | 174 | 34 | 3.4 | 30% | 14.8 |
+| S2 Impella P8 | 69 | 13 | 157 | 0 | 3.8 | 0% | 14.0 |
+| S3 VA-ECMO 4 L/min | 81 | **26** | 210 | 23 | 6.3 | 23% | 10.9 |
+| S4 ECpella (VA-ECMO **4** + Impella P5) | 83 | **23** | 198 | 5 | 6.7 | 12% | 10.4 |
+| S5 ECpella, ECMO weaned to 2 (Impella P8) | 79 | 15 | 166 | 0 | 5.6 | 0% | 11.4 |
 
-MAP at S3/S4 is too high because there is **no baroreflex yet** - added circuit flow has
-nowhere to go but pressure. That is the next piece of work, and the LVEDP rise at S3
-(+13 mmHg) is expected to fall to roughly +7 once it lands.
+**S4 differs from S3 by exactly one variable: the pump.** Circuit flow stays at 4 L/min,
+so the S3 -> S4 comparison is a clean counterfactual, and the harness fails if a second
+variable ever changes. S5 is the weaned configuration; it changes two things at once, so it
+is offered as a management step rather than as a comparison.
 
 (Full values in `validation/report.md`.)
+
+### Baroreflex
+
+An arterial baroreflex acts on systemic vascular resistance:
+
+    SVR_target(P) = SVRmin + (SVRmax - SVRmin) / (1 + exp((P - setpoint)/k))
+
+with a 2 s baroreceptor sensing lag and an 8 s vascular effector lag, integrated on the same
+fixed 1 ms tick as everything else. Setpoint 68 mmHg, k = 12 mmHg, SVR bounded to
+0.45-1.25 mmHg*s/mL (7.5-20.8 Wood units).
+
+**Why it exists.** Without it, resistance is fixed, so every litre of added circuit flow
+turns directly into pressure. VA-ECMO at 4 L/min produced MAP 99, and ECMO 4 + Impella P8
+produced MAP 117 - numbers no shocked patient has.
+
+**How it is calibrated.** The setpoint was chosen so the reflex output at the unsupported
+operating point *reproduces the SVR the open-loop model was already calibrated with*
+(~16 Wood units). That is the physiologically meaningful reading of a shocked patient's high
+SVR: it is the reflex, already near maximal constriction. Support then unloads the reflex.
+S0 is therefore unchanged by adding it (MAP 62.2 -> 61.9, LVEDP 20.1 -> 20.0), and nothing
+downstream had to be re-tuned to accommodate it.
+
+**Is it compensating for something, or fixing it?** Fixing it. Across a setpoint sweep from
+66 to 78 mmHg the ratio dLVEDP/dMAP stayed at 0.339-0.347 - the same 0.35 measured in the
+open-loop model. The reflex shrinks the pressure excursion; LVEDP then follows the same
+unchanged relationship. Had the ratio moved, the reflex would have been papering over the
+ventricular mechanics instead.
+
+| | open loop | with reflex |
+|---|---:|---:|
+| S0 MAP / LVEDP | 62.2 / 20.1 | 61.9 / 20.0 |
+| S3 MAP / LVEDP | 98.7 / 33.0 | 81.0 / 26.5 |
+| dMAP / dLVEDP | +36.5 / +12.9 | **+19.1 / +6.5** |
+| SVR at S3 | 16.0 WU (fixed) | 10.9 WU |
+
+**What it deliberately leaves out**, each for a reason rather than by omission:
+
+- **Heart rate.** A reflex-driven HR would differ between the two panes, because they sit at
+  different pressures. That desynchronises the shared cardiac clock the whole twin-pane
+  comparison depends on, and would break beat-to-beat alignment of the waveforms and PV
+  loops. Left out on purpose.
+- **Contractility.** Ees defines this patient's phenotype and is displayed in the app; a
+  reflex moving it would make that label unstable.
+- **Pulsatility sensing.** Real baroreceptors fire on the pulsatile component, so the loss of
+  pulse pressure on full VA-ECMO is itself a constrictor stimulus. Omitted - it would push
+  SVR the other way and is not needed for anything taught here.
+- **Venous tone and unstressed-volume recruitment.**
+
+Reflex gain in cardiogenic shock is variable and often blunted, particularly after
+catecholamines. The gain here is a modelling choice, not a measurement. `baroEnabled: false`
+restores the open-loop behaviour for comparison.
 
 ### LV afterload response calibration
 
@@ -166,13 +219,31 @@ aortic-valve opening fall at **every** phenotype.
 
 ### Design decisions that differ from the original spec
 
-1. **S4 weans ECMO from 4 to 2 L/min as the Impella is added.** With fixed SVR and no baroreflex, adding a vent at *constant* ECMO flow reopens flow through the lungs: the RV now pumps what the LV can pass. Total flow rises and MAP rises (to 117 mmHg at ECMO 4 + P8; see E4). "MAP holds while LVEDP falls" only happens in this model when the circuit is weaned, which is also standard practice. The literal spec version (ECMO held at 4 + Impella ramp) runs as E4, and the "MAP holds" claim is reported there as not met.
+1. **The demo's ECpella state uses Impella P5, not P8.** At P8 in this phenotype the pump
+   takes over ejection completely: native SV and aortic-valve opening both go to zero. That
+   is correct, but on camera the S3 -> S4 transition then reads as the pump having arrested
+   the heart rather than unloaded it. P5 keeps the valve intermittently opening (23% -> 12%
+   of the cycle) and native SV non-zero (23 -> 5 mL) while still reversing more than half the
+   ECMO-induced LVEDP rise. The trade-off is real and is a genuine choice, not a fix, so P8
+   stays selectable in Explore and is what S5 uses:
+
+   | Impella level (ECMO held at 4) | LVEDP | change vs S3 | AV open | native SV |
+   |---:|---:|---:|---:|---:|
+   | none (S3) | 26.5 | - | 23% | 23 mL |
+   | P4 | 23.7 | -2.8 | 15% | 8 |
+   | **P5 (demo)** | **22.8** | **-3.7** | **12%** | **5** |
+   | P6 | 21.7 | -4.8 | 7% | 2 |
+   | P7 | 19.5 | -7.0 | 0% | 0 |
+   | P8 | 16.3 | -10.2 | 0% | 0 |
+
+   P8 tells the stronger unloading story (LVEDP ends *below* the unsupported baseline of 20);
+   P5 tells the more legible one. Switch by changing `IMPELLA_ECPELLA_LEVEL`.
 2. **IABP E6 checks assert each mistiming's textbook signature**, not the spec's blanket "correct timing → higher DPTI and lower stroke work than early inflation". Early inflation cuts SV, so stroke work (loop area) falls rather than rises. The O₂-demand index is PVA. The spec-literal lines are still reported as non-gating notes.
-3. **Two pre-specified textbook expectations failed on first run and are reported as documented divergences, not hidden.** Early inflation gives PVA ≈ −1.5% instead of higher (SV↓, ESV↑, EDV↑ and premature AV closure are all reproduced). Late deflation gives SV ≈ +2% instead of lower (AoEDP↑ and PVA↑ are reproduced; the balloon finishes deflating during early ejection). Both were reclassified *after* the numbers were seen; the report says so.
+3. **One pre-specified textbook expectation is still not reproduced, and is reported as a divergence rather than hidden.** Late deflation gives native SV about 2% *higher* than correct timing instead of lower; the raised aortic end-diastolic pressure and raised PVA are reproduced, but the balloon finishes deflating during early ejection and draws blood out of the LV. It was reclassified *after* the numbers were seen and the report says so. A second divergence (early inflation giving slightly lower PVA) was resolved by the Task D recalibration and is a gating check again.
 
 ### Known limitations
 
-No baroreflex or autoregulation. No drugs (by design). The RV is minimal. No aortic regurgitation or watershed/mixing zone. Impella and ECMO curves are illustrative. No inertance, so there is no dicrotic notch *on the trace*, although AV closure is exact in the state. The IABP timing reference falls back to defaults if the balloon is armed while the AV is not opening.
+Baroreflex acts on SVR only (see above for what that omits and why). No local autoregulation. No drugs (by design). The RV is minimal. No aortic regurgitation or watershed/mixing zone. Impella and ECMO curves are illustrative. No inertance, so there is no dicrotic notch *on the trace*, although AV closure is exact in the state. The IABP timing reference falls back to defaults if the balloon is armed while the AV is not opening.
 
 ---
 

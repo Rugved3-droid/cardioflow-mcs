@@ -41,6 +41,7 @@ export function App() {
       if (mode !== 'explore') return;
       const n = Number(e.key);
       if (n >= 1 && n <= 5) goState(THERAPY_ORDER[n - 1]);
+      else if (n === 6) goState('S5');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

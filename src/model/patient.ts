@@ -71,6 +71,18 @@ export const SHOCK_PATIENT: PatientParams = {
   rTricuspid: 0.004,
   rPulmonic: 0.004,
 
+  /* --- baroreflex on SVR ---
+   * Calibrated so the reflex output at the unsupported shock pressure reproduces
+   * the SVR the open-loop model used (0.96 mmHg*s/mL = 16 Wood units): a shocked
+   * patient's high SVR IS the reflex near maximal constriction. */
+  baroEnabled: true,
+  baroSetpoint: 68,
+  baroK: 12,
+  svrMin: 0.45,
+  svrMax: 1.25,
+  baroSenseTau: 2,
+  baroEffectorTau: 8,
+
   cAo: 0.2,
   rc: 0.05,
   cSa: 1.3,

@@ -7,6 +7,7 @@ export const STEADY_LABEL: Record<SteadyKey, string> = {
   S2: THERAPY_STATES.S2.name,
   S3: THERAPY_STATES.S3.name,
   S4: THERAPY_STATES.S4.name,
+  S5: THERAPY_STATES.S5.name,
   ECMO2: 'VA-ECMO 2 L/min',
 };
 

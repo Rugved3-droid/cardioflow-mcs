@@ -18,6 +18,7 @@ export const STEADY_CONFIGS = {
   S2: THERAPY_STATES.S2.settings,
   S3: THERAPY_STATES.S3.settings,
   S4: THERAPY_STATES.S4.settings,
+  S5: THERAPY_STATES.S5.settings,
   ECMO2: { ...NO_DEVICE, ecmoFlowLpm: 2 },
 } satisfies Record<string, DeviceSettings>;
 
