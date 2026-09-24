@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "validate": "tsx scripts/validate.ts",
-    "snapshots": "tsx scripts/snapshots.ts"
+    "snapshots": "tsx scripts/snapshots.ts",
+    "keytable": "tsx scripts/keyTable.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

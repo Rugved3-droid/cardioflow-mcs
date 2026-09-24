@@ -16,7 +16,11 @@ export interface Scorecard {
     n: number;
     correct: number;
     pct: number;
-    /** the defining dissociation: predicted BOTH MAP↑ and LVEDP↑ for VA-ECMO */
+    /**
+     * The defining dissociation: predicted BOTH that VA-ECMO raises MAP and that it
+     * lowers native stroke volume. Both halves are evidence-backed and robust to the
+     * preload/afterload balance, unlike LVEDP (see itemBank: ecmo-lvedp, retired).
+     */
     keyPair: 'both-correct' | 'missed' | 'not-attempted';
   };
   predictionPct: number;
@@ -37,8 +41,8 @@ export function score(s: Session): Scorecard {
   const comp = s.responses.filter((r) => r.competencyItem);
   const compCorrect = comp.filter((r) => r.predictionCorrect).length;
   const map = s.responses.find((r) => r.itemId === 'ecmo-map');
-  const lvedp = s.responses.find((r) => r.itemId === 'ecmo-lvedp');
-  const keyPair = !map || !lvedp ? 'not-attempted' : map.predictionCorrect && lvedp.predictionCorrect ? 'both-correct' : 'missed';
+  const sv = s.responses.find((r) => r.itemId === 'ecmo-sv');
+  const keyPair = !map || !sv ? 'not-attempted' : map.predictionCorrect && sv.predictionCorrect ? 'both-correct' : 'missed';
   const n = s.responses.length;
   const lat = s.responses.map((r) => r.latencyMs).sort((a, b) => a - b);
   return {

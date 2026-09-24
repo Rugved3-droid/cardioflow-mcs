@@ -26,12 +26,18 @@ Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-con
 ### Scorecard
 
 - % correct by construct: IABP timing, Impella unloading, aortic valve opening, VA-ECMO pressure, VA-ECMO LV filling pressure, VA-ECMO native SV, ECpella.
-- **Headline competency, "distinguishes systemic perfusion from ventricular unloading":** % correct on the 5 items where perfusion and unloading move independently (Impella LVEDP, ECMO MAP, ECMO LVEDP, ECMO native SV, ECpella LVEDP). It also reports the **key dissociation**: whether the resident predicted *both* MAP↑ and LVEDP↑ for VA-ECMO.
+- **Headline competency, "distinguishes systemic perfusion from ventricular unloading":** % correct on the items where perfusion and ventricular loading move independently (Impella LVEDP, ECMO MAP, ECMO native SV, ECpella LVEDP). It also reports the **key dissociation**: whether the resident predicted *both* that VA-ECMO raises MAP *and* that it lowers native stroke volume — both halves evidence-backed and robust to the preload/afterload balance.
 - This is formative feedback. It is not a validated assessment instrument, and the threshold for "competent" is not defined.
 
 ### Where answers come from
 
-Correct answers live in `src/assessment/itemBank.ts`, keyed from physiology/literature with a source comment on each item. They are **never** read from simulator output. The dependency runs the other way: validation check E7 fails if the simulator ever disagrees with the key. The citations were entered from memory during the build; **verify each against the original before any publication or CME use.**
+Correct answers live in `src/assessment/itemBank.ts`, keyed from physiology/literature with a source and a written basis on each item. They are **never** read from simulator output. The dependency runs the other way: validation check E7 fails if the simulator ever disagrees with a key.
+
+**`validation/ANSWER-KEYS.md` is the sign-off sheet** — generated from the item bank by `npm run keytable`, so it cannot drift from what ships. Take it to a cardiologist and have each row marked agree / disagree / reword.
+
+All nine cited references were checked against the published record on 2026-09-24 and exist with the stated journal, year, volume and pages. Whether a citation *supports the specific claim* is tracked separately, per item.
+
+**One item was retired** (`ecmo-lvedp`, "VA-ECMO raises LVEDP") because its direction is contingent in humans rather than established: reported LV-distension incidence spans 1–68%, and a published case series found LVEDP *lower* at high circuit flow than at low flow. This model is parameterised so afterload dominates and LVEDP rises, which is a defensible teaching configuration but not a universal finding, so scoring a learner wrong for answering "fall" is not defensible. It stays in the file, inactive, with the reasoning. The teaching point is carried instead by native SV and aortic-valve opening, where preload reduction and afterload rise push the same way.
 
 ---
 
@@ -39,6 +45,7 @@ Correct answers live in `src/assessment/itemBank.ts`, keyed from physiology/lite
 
 ```
 npm install
+npm run keytable    # regenerate validation/ANSWER-KEYS.md (cardiologist sign-off sheet)
 npm run validate    # headless sanity checks → validation/report.md + results.csv (exit 1 on failure)
 npm run snapshots   # regenerate shipped steady states after any model/patient change
 npm run build       # typecheck + single-file build → release/CardioFlow-MCS.html

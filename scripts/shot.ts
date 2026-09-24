@@ -5,6 +5,7 @@
  */
 import puppeteer from 'puppeteer-core';
 import { pathToFileURL } from 'node:url';
+import { ACTIVE_ITEMS } from '../src/assessment/itemBank';
 import { resolve } from 'node:path';
 
 const CHROME = process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
@@ -39,7 +40,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');
-    for (let i = 0; i < 10; i++) {
+    const N = ACTIVE_ITEMS.length;
+    for (let i = 0; i < N; i++) {
       await clickText(i % 3 === 0 ? 'Fall' : 'Rise').catch(async () => clickText('Opens less').catch(() => clickText('Closes earlier')));
       await clickText('Lock answer');
       await page.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'Lock' ), { timeout: 30000 });
@@ -49,7 +51,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
       await sleep(200);
       if (i === 5) await shot('2-mech');
       if (process.env.STOP && i === +process.env.STOP) { await shot('stop'); break; }
-      await clickText(i < 9 ? 'Next item' : 'Finish');
+      await clickText(i < N - 1 ? 'Next item' : 'Finish');
       await sleep(300);
     }
     await sleep(500); await shot('3-scorecard');

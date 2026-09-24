@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TwinEngine } from '../runtime/TwinEngine';
-import { ITEM_BANK, type Direction, type PredictionItem } from '../assessment/itemBank';
+import { ACTIVE_ITEMS, type Direction, type PredictionItem } from '../assessment/itemBank';
 import {
   aggregateCsv,
   allSessions,
@@ -42,10 +42,10 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
   const t = useRef({ shown: 0, shownAt: '', locked: 0, lockedAt: '', mechShown: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const item = ITEM_BANK[idx];
+  const item = ACTIVE_ITEMS[idx];
 
   const startItem = (i: number) => {
-    const it = ITEM_BANK[i];
+    const it = ACTIVE_ITEMS[i];
     engine.speed = 1;
     engine.load(it.from, it.from, STEADY_LABEL[it.from], STEADY_LABEL[it.from]);
     setIdx(i);
@@ -115,7 +115,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
   };
 
   const nextItem = () => {
-    if (idx + 1 < ITEM_BANK.length) startItem(idx + 1);
+    if (idx + 1 < ACTIVE_ITEMS.length) startItem(idx + 1);
     else if (session) {
       const done = { ...session, finishedAt: new Date().toISOString() };
       setSession(done);
@@ -167,7 +167,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
       <div className="drawer">
         <div className="row" style={{ marginBottom: 10 }}>
           <span className="q-stem" style={{ margin: 0 }}>Resident session</span>
-          <span className="muted">{ITEM_BANK.length} prediction items · anonymous · about 10 minutes</span>
+          <span className="muted">{ACTIVE_ITEMS.length} prediction items · anonymous · about 10 minutes</span>
         </div>
         <div className="row" style={{ marginBottom: 10 }}>
           <label className="ctl">
@@ -193,7 +193,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
               {fmt(sc.headline.pct, 0)}% <span className="muted small">({sc.headline.correct}/{sc.headline.n} items)</span>
             </div>
             <div className="small">
-              Key dissociation (VA-ECMO: MAP ↑ and LVEDP ↑):{' '}
+              Key dissociation (VA-ECMO: MAP ↑ and native SV ↓):{' '}
               <b className={sc.headline.keyPair === 'both-correct' ? 'verdict ok' : 'verdict no'}>
                 {sc.headline.keyPair === 'both-correct' ? 'demonstrated' : sc.headline.keyPair === 'missed' ? 'not demonstrated' : 'not attempted'}
               </b>
@@ -243,7 +243,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
     <div className="drawer">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="q-intervention">
-          ITEM {idx + 1}/{ITEM_BANK.length} · INTERVENTION ON B: {item.intervention.toUpperCase()}
+          ITEM {idx + 1}/{ACTIVE_ITEMS.length} · INTERVENTION ON B: {item.intervention.toUpperCase()}
         </span>
         <span className="mono small muted">SESSION {session?.sessionId}</span>
       </div>
@@ -302,7 +302,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
             <div className="chain">{item.explanation}</div>
             <div className="source">Key source: {item.source}</div>
           </div>
-          <button className="btn primary" onClick={nextItem}>{idx + 1 < ITEM_BANK.length ? 'Next item →' : 'Finish & see scorecard'}</button>
+          <button className="btn primary" onClick={nextItem}>{idx + 1 < ACTIVE_ITEMS.length ? 'Next item →' : 'Finish & see scorecard'}</button>
         </div>
       )}
       {note && <div className="small muted">{note}</div>}

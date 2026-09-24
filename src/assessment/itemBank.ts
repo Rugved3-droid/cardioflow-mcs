@@ -6,8 +6,10 @@
  * learner has locked an answer. `npm run validate` (E7) checks the reverse — that
  * the simulator agrees with this key — and fails loudly if it ever does not.
  *
- * Citations below were entered from memory while building; verify each against
- * the original before any publication or CME use.
+ * CITATION STATUS (checked against the published record 2026-09-24): every reference
+ * below was confirmed to exist with the stated journal, year, volume and pages.
+ * What a citation SUPPORTS is a separate question from whether it exists — see the
+ * per-item `verification` field and README "Answer-key verification".
  *
  * Key references:
  *  [BURKHOFF15] Burkhoff D, Sayer G, Doshi D, Uriel N. Hemodynamics of mechanical
@@ -22,6 +24,14 @@
  *  [PAPPA17]    Pappalardo F, Schulte C, Pieri M, et al. Concomitant implantation of
  *               Impella on top of VA-ECMO may improve survival of patients with
  *               cardiogenic shock. Eur J Heart Fail. 2017;19(3):404-12.
+ *               NOTE: an outcomes/survival study. It does NOT establish any hemodynamic
+ *               direction and must not be cited as if it did.
+ *  [EZAD23]     Ezad SM, Ryan M, Donker DW, et al. Unloading the left ventricle in
+ *               venoarterial ECMO: in whom, when, and how? Circulation.
+ *               2023;147(16):1237-50.
+ *  [SCHRAGE18]  Schrage B, Burkhoff D, Westermann D, et al. Unloading of the left
+ *               ventricle during venoarterial extracorporeal membrane oxygenation
+ *               therapy in cardiogenic shock. JACC Heart Fail. 2018;6(12):1035-43.
  *  [TROST06]    Trost JC, Hillis LD. Intra-aortic balloon counterpulsation.
  *               Am J Cardiol. 2006;97(9):1391-8.
  *  [KRISHNA09]  Krishna M, Zacharowski K. Principles of intra-aortic balloon pump
@@ -74,6 +84,14 @@ export interface PredictionItem {
   source: string;
   /** which simulator metric illustrates the answer after reveal, and the band treated as "unchanged" (E7 only) */
   observe: { metric: keyof BeatMetrics; unit: string; unchangedBand: number };
+  /**
+   * false = RETIRED from the active bank. Retired items are never shown to a learner,
+   * never scored, and never checked by E7. They stay here with their reason so a
+   * reviewing cardiologist can see what was removed and why.
+   */
+  active: boolean;
+  /** why this key is or is not defensible; surfaced in the sign-off table. */
+  verification: string;
 }
 
 const AV_LABELS: Record<Direction, string> = {
@@ -86,6 +104,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [TROST06] diastolic augmentation is the defining effect of correctly timed counterpulsation; [KRISHNA09].
     id: 'iabp-augmentation',
+    active: true,
+    verification:
+      `VERIFIED. Diastolic augmentation is the defining action of counterpulsation; [TROST06] states IABP increases diastolic arterial pressure. Not model-dependent.`,
     construct: 'iabp_timing',
     competency: false,
     from: 'S0',
@@ -110,6 +131,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [TROST06]/[KRISHNA09] late deflation: assisted aortic end-diastolic pressure ≥ unassisted; balloon impedes ejection.
     id: 'iabp-late-deflation',
+    active: true,
+    verification:
+      `VERIFIED. Standard bedside criterion: late deflation raises the assisted aortic end-diastolic pressure and impedes ejection [TROST06][KRISHNA09]. Direction not model-dependent. (This model reproduces the AoEDP rise but not the accompanying SV fall - see validation report; the item asks only about AoEDP.)`,
     construct: 'iabp_timing',
     competency: false,
     from: 'S1',
@@ -134,6 +158,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [TROST06]/[KRISHNA09] early inflation (before the dicrotic notch) causes premature aortic valve closure.
     id: 'iabp-early-inflation',
+    active: true,
+    verification:
+      `VERIFIED. Premature aortic valve closure is the named consequence of inflation before the dicrotic notch [TROST06][KRISHNA09]. Not model-dependent.`,
     construct: 'iabp_timing',
     competency: false,
     from: 'S1',
@@ -159,6 +186,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [BURKHOFF15] Impella directly unloads the LV: PV loop shifts left, LVEDP/LVEDV/PVA fall.
     id: 'impella-lvedp',
+    active: true,
+    verification:
+      `VERIFIED. Direct mechanical removal of LV volume; the PV loop shifts left and down [BURKHOFF15]. Robust: no plausible parameter set reverses it. Not model-dependent.`,
     construct: 'impella_unloading',
     competency: true,
     from: 'S0',
@@ -183,6 +213,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [BURKHOFF15] at high support the LV no longer generates enough pressure to open the AV; loop loses isovolumic phases.
     id: 'impella-av',
+    active: true,
+    verification:
+      `VERIFIED at high support. At full support the LV no longer exceeds aortic pressure and the valve stops opening [BURKHOFF15]; a persistently closed aortic valve is a recognized indication to vent [EZAD23]. Level-dependent: at low support the valve still opens. Keyed at P8, where the direction is not in doubt.`,
     construct: 'av_opening',
     competency: false,
     from: 'S0',
@@ -208,6 +241,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [RAO18]/[BURKHOFF15] VA-ECMO returns flow to the arterial tree, raising arterial pressure.
     id: 'ecmo-map',
+    active: true,
+    verification:
+      `VERIFIED. Uncontroversial: circuit flow into the arterial tree raises arterial pressure [RAO18][BURKHOFF15]. Not model-dependent. Magnitude is reflex-dependent; direction is not.`,
     construct: 'ecmo_perfusion',
     competency: true,
     from: 'S0',
@@ -233,6 +269,9 @@ export const ITEM_BANK: PredictionItem[] = [
     // SOURCE: [BURKHOFF15]/[RAO18]/[DONKER19] retrograde VA-ECMO flow raises LV afterload; in a poorly contractile LV,
     //         EDV and EDP rise (LV distension). [OSTADAL15] shows the same with increasing flow in a porcine model.
     id: 'ecmo-lvedp',
+    active: false,
+    verification:
+      `RETIRED 2026-09-24 - DIRECTION IS CONTINGENT IN HUMANS. VA-ECMO both unloads preload (venous drainage) and raises afterload (retrograde return); which dominates varies by patient. Reported LV distension incidence spans 1-68% [EZAD23]. A published case series found LVEDP LOWER at high circuit flow (median 6 mmHg at 4.1 L/min) than at low flow (13.5 mmHg at 1.9 L/min) - the opposite of this key. This model is parameterised so afterload dominates, which is a legitimate teaching configuration (it is the patient who needs venting) but is NOT a universal human finding. Scoring a learner wrong for answering 'fall' is indefensible. The teaching point survives via ecmo-sv and ecmo-av, where preload reduction and afterload rise push the SAME way.`,
     construct: 'ecmo_lvedp',
     competency: true,
     from: 'S0',
@@ -257,6 +296,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [OSTADAL15] increasing VA-ECMO flow decreased LV stroke volume/ejection; [BURKHOFF15].
     id: 'ecmo-sv',
+    active: true,
+    verification:
+      `VERIFIED by direct measurement. [OSTADAL15] porcine cardiogenic shock, conductance-catheter PV loops: raising circuit flow 1->5 L/min reduced cardiac output 2.8->1.86 L/min and LVEF 43%->32%. Robust because preload reduction and afterload rise both lower SV. Caveat: porcine, n=5, and the human magnitude is not established.`,
     construct: 'ecmo_sv',
     competency: true,
     from: 'ECMO2',
@@ -281,6 +323,9 @@ export const ITEM_BANK: PredictionItem[] = [
   {
     // SOURCE: [RAO18]/[OSTADAL15] with rising VA-ECMO flow the aortic valve opens less and may stop opening.
     id: 'ecmo-av',
+    active: true,
+    verification:
+      `VERIFIED as mechanism and as recognised clinical phenomenon: an aortic valve that stops opening on VA-ECMO is a listed indication for venting [EZAD23][RAO18]. Robust for the same reason as ecmo-sv. Caveat: the circuit flow at which the valve closes is patient-specific, so the KEY is safe but the THRESHOLD shown is this model's.`,
     construct: 'av_opening',
     competency: false,
     from: 'ECMO2',
@@ -300,12 +345,15 @@ export const ITEM_BANK: PredictionItem[] = [
       correctIndex: 1,
     },
     explanation: 'Aortic pressure ↑ → the LV needs longer to exceed it and leaves it sooner → valve open for less of the cycle → toward a closed valve and stasis.',
-    source: 'Rao et al., Circ Heart Fail 2018; Ostadal et al., J Transl Med 2015',
+    source: 'Ezad et al., Circulation 2023; Rao et al., Circ Heart Fail 2018',
     observe: { metric: 'avOpenFraction', unit: 'of cycle', unchangedBand: 0.01 },
   },
   {
     // SOURCE: [DONKER19]/[PAPPA17]/[BURKHOFF15] adding a transvalvular pump to VA-ECMO unloads the LV (LVEDP/LVEDV fall).
     id: 'ecpella-lvedp',
+    active: true,
+    verification:
+      `VERIFIED as direction. A transvalvular pump removes LV volume irrespective of the aortic valve, so LVEDP falls from wherever it started [BURKHOFF15]; quantified in a closed-loop human simulation [DONKER19] and the basis of the venting literature [EZAD23][SCHRAGE18]. [PAPPA17] supports clinical use and outcomes, NOT the hemodynamic direction. CONFOUND (pre-Task-C): as shipped this item changed two variables at once (added Impella AND weaned ECMO 4->2). Fixed when S4 was restored to ECMO-held.`,
     construct: 'ecpella',
     competency: true,
     from: 'S3',
@@ -324,9 +372,13 @@ export const ITEM_BANK: PredictionItem[] = [
       correctIndex: 2,
     },
     explanation: 'Pump removes blood from the LV regardless of the valve → LV volume ↓ → LVEDP ↓, while total systemic flow is preserved by pump + circuit.',
-    source: 'Donker et al., ASAIO J 2019; Pappalardo et al., Eur J Heart Fail 2017; Burkhoff et al., JACC 2015',
+    source: 'Burkhoff et al., JACC 2015; Donker et al., ASAIO J 2019 (simulation); Ezad et al., Circulation 2023',
     observe: { metric: 'lvedp', unit: 'mmHg', unchangedBand: 1 },
   },
 ];
+
+/** What learners actually see and what E7 checks. Retired items are excluded. */
+export const ACTIVE_ITEMS: PredictionItem[] = ITEM_BANK.filter((i) => i.active);
+export const RETIRED_ITEMS: PredictionItem[] = ITEM_BANK.filter((i) => !i.active);
 
 export const HEADLINE_COMPETENCY = 'Distinguishes systemic perfusion from ventricular unloading';

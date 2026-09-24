@@ -20,7 +20,7 @@ import { IABP_TIMINGS, type IabpTimingName } from '../src/model/devices/iabp';
 import { SLEW } from '../src/model/constants';
 import { THERAPY_ORDER, THERAPY_STATES } from '../src/model/therapyStates';
 import { computeAllSteadyStates } from '../src/model/steadyStates';
-import { ITEM_BANK, type Direction } from '../src/assessment/itemBank';
+import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
 /* ------------------------------------------------------------------ invariants */
@@ -323,7 +323,7 @@ function main() {
   /* E7 — item bank consistency: the simulator must agree with every hand-keyed answer.
      (Direction of dependency: sim is checked AGAINST the key; the key is never derived from the sim.) */
   const fresh = computeAllSteadyStates();
-  for (const item of ITEM_BANK) {
+  for (const item of ACTIVE_ITEMS) {
     const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[item.from]);
     const before = sim.lastBeat!;
     sim.setSettings(item.to);
@@ -337,6 +337,14 @@ function main() {
     rows.push({ exp: 'E7', step: item.id, settings: { ...sim.state.settings }, m: after, beats: 100, converged: true });
     check('E7', `item "${item.id}": simulator direction of ${String(k)} matches key (${item.correct})`, item.source, dir === item.correct, `${fx(a)} → ${fx(b)} (${dir})`);
   }
+
+  check(
+    'E7',
+    `retired items are excluded from the learner-facing bank (${RETIRED_ITEMS.length} retired: ${RETIRED_ITEMS.map((i) => i.id).join(', ') || 'none'})`,
+    'a key that cannot be defended must not be scored',
+    RETIRED_ITEMS.every((i) => !i.active) && ACTIVE_ITEMS.every((i) => i.active),
+    `${ACTIVE_ITEMS.length} active / ${RETIRED_ITEMS.length} retired`,
+  );
 
   /* Shipped snapshots match the current model */
   check(
