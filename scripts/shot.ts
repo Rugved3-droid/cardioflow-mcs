@@ -61,6 +61,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await sleep(2200);
     await shot('2-settled');
     await report('AT ~62s ');
+  } else if (scenario === 'plane') {
+    await page.keyboard.press('4');
+    await sleep(20000);
+    await shot('0-s3-midtransit');
+    await sleep(30000);
+    await page.keyboard.press('5');
+    await sleep(25000);
+    await page.keyboard.press('p');
+    await sleep(900);
+    await shot('1-overlay-trail');
+    await sleep(30000);
+    await shot('2-overlay-settled');
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

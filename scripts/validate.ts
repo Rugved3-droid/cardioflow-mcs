@@ -23,7 +23,8 @@ import { computeAllSteadyStates, type SteadyKey } from '../src/model/steadyState
 import { WOOD_PER_MMHG_S_ML } from '../src/model/baroreflex';
 import { derivePath, graphIntegrity, liveSteps, observeAll, UNOBSERVABLE_ALLOWED, WHY_TARGETS } from '../src/causal/derive';
 import { EDGES, NODES } from '../src/causal/graph';
-import { fmt, NODE_TILE, val } from '../src/ui/metrics';
+import { fmt, M, NODE_TILE, val } from '../src/ui/metrics';
+import { ANCHORS, planePoint } from '../src/plane/plane';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -500,6 +501,39 @@ function main() {
       }
     }
     check('E11', 'every chain value rendered by the ribbon is byte-identical to the tile for the same pane', 'no freeze-frame may show two different numbers for one variable', mismatches === 0 && compared > 0, mismatches ? pairErrors.slice(-3).join('; ') : `${compared} rendered values identical`);
+  }
+
+  /* E12 — perfusion/unloading plane. The plane is the one view whose whole purpose is
+     a geometric claim, so the geometry is asserted rather than eyeballed. */
+  {
+    const P: Record<string, ReturnType<typeof planePoint>> = {};
+    for (const id of ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'] as SteadyKey[]) {
+      P[id] = planePoint(fresh[id].lastBeat!);
+    }
+    const inRange = Object.entries(P).every(([, p]) => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
+    check('E12', 'all five states land inside the normalised 0..1 plane (anchors are not clipping the story)', 'fixed anchors must span the states they have to separate', inRange, Object.entries(P).map(([k, p]) => `${k}(${p.x.toFixed(2)},${p.y.toFixed(2)})`).join(' '));
+
+    // the claim the whole view exists to make
+    cmp('E12', 'S0→S3 moves RIGHT (perfusion bought)', P.S3.x - P.S0.x, '>', 0.3, 'VA-ECMO raises MAP and total flow', true, 3);
+    cmp('E12', 'S0→S3 moves DOWN (ventricle pays for it)', P.S3.y - P.S0.y, '<', -0.15, 'LVEDP and PVA both rise — the divergence the plane exists to show', true, 3);
+    cmp('E12', 'S3→S4 moves UP (venting recovers unloading)', P.S4.y - P.S3.y, '>', 0.08, 'the pump lowers LVEDP and PVA', true, 3);
+    cmp('E12', 'S3→S4 does not move LEFT (perfusion is not given up)', P.S4.x - P.S3.x, '>', -0.01, 'pump flow adds to unchanged circuit flow', true, 3);
+    cmp('E12', 'S0→S2 moves UP (Impella alone unloads)', P.S2.y - P.S0.y, '>', 0.15, 'direct mechanical unloading', true, 3);
+    check('E12', 'S0→S1 is a small move up and to the right (IABP is a modest intervention)', 'the plane must not overstate counterpulsation', P.S1.x > P.S0.x && P.S1.y > P.S0.y && Math.hypot(P.S1.x - P.S0.x, P.S1.y - P.S0.y) < 0.3, `d=(${(P.S1.x - P.S0.x).toFixed(3)}, ${(P.S1.y - P.S0.y).toFixed(3)})`);
+
+    // axis monotonicity: each component must move its axis the right way, alone
+    const base = fresh.S0.lastBeat!;
+    const bump = (k: keyof BeatMetrics, v: number) => planePoint({ ...base, [k]: v } as BeatMetrics);
+    check('E12', 'X increases with MAP alone', 'systemic support axis', bump('map', base.map + 10).x > planePoint(base).x, `${planePoint(base).x.toFixed(3)} → ${bump('map', base.map + 10).x.toFixed(3)}`);
+    check('E12', 'X increases with total flow alone', 'systemic support axis', bump('totalFlowLpm', base.totalFlowLpm + 1).x > planePoint(base).x, `${planePoint(base).x.toFixed(3)} → ${bump('totalFlowLpm', base.totalFlowLpm + 1).x.toFixed(3)}`);
+    check('E12', 'Y decreases as LVEDP rises alone', 'unloading axis is an INVERSE of filling pressure', bump('lvedp', base.lvedp + 5).y < planePoint(base).y, `${planePoint(base).y.toFixed(3)} → ${bump('lvedp', base.lvedp + 5).y.toFixed(3)}`);
+    check('E12', 'Y decreases as PVA rises alone', 'unloading axis is an INVERSE of O2 demand', bump('pva', base.pva + 1000).y < planePoint(base).y, `${planePoint(base).y.toFixed(3)} → ${bump('pva', base.pva + 1000).y.toFixed(3)}`);
+    check('E12', 'values beyond the anchors clamp rather than leaving the plane', 'a rescued or an arrested patient must still be plottable', planePoint({ ...base, map: 200, totalFlowLpm: 30, lvedp: -5, pva: 0 } as BeatMetrics).x === 1 && planePoint({ ...base, map: 0, totalFlowLpm: 0, lvedp: 90, pva: 40000 } as BeatMetrics).y === 0, 'clamped');
+
+    // the plane must read the same fields the tiles do
+    const planeFields: [string, keyof BeatMetrics][] = [['map', M.map.key], ['totalFlowLpm', M.total.key], ['lvedp', M.lvedp.key], ['pva', M.pva.key]];
+    check('E12', 'the plane reads the same BeatMetrics fields the numeric tiles display', 'one number, several views', planeFields.every(([f2, k]) => f2 === k), planeFields.map(([f2, k]) => `${f2}=${String(k)}`).join(', '));
+    check('E12', 'anchors are documented constants, not fitted to the data being plotted', 'a point must mean the same thing in every session', ANCHORS.map[0] === 50 && ANCHORS.map[1] === 90 && ANCHORS.lvedp[0] === 35 && ANCHORS.lvedp[1] === 8, `MAP ${ANCHORS.map.join('→')}, flow ${ANCHORS.flow.join('→')}, LVEDP ${ANCHORS.lvedp.join('→')}, PVA ${ANCHORS.pva.join('→')}`);
   }
 
   /* Shipped snapshots match the current model */

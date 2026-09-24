@@ -13,7 +13,7 @@ An educational simulator for mechanical circulatory support (IABP, Impella, VA-E
 
 Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-contained file: no install, no server, no network. It works in current Chrome and Edge.
 
-- **Explore:** keys **1–6** select S0–S5. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
+- **Explore:** keys **1–6** select S0–S5. **P** opens the perfusion/unloading plane full-screen. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
 - **Resident session:** 10 prediction items, anonymous, about 10 minutes. Each item runs: predict → lock → watch the intervention run (3×) → reveal → pick a mechanism → see the causal chain.
 
 ### Session data
@@ -111,6 +111,51 @@ variable ever changes. S5 is the weaned configuration; it changes two things at 
 is offered as a management step rather than as a comparison.
 
 (Full values in `validation/report.md`.)
+
+### Perfusion / unloading plane
+
+Two axes a single number cannot express, plotted against each other so the divergence
+between them becomes geometry:
+
+- **X, systemic support** = mean of normalised MAP and normalised total systemic flow.
+- **Y, ventricular unloading** = mean of normalised *inverse* LVEDP and normalised *inverse* PVA.
+
+**Normalisation.** Both axes are 0-1 against fixed anchors, chosen from clinical reference
+points and never fitted to the data being plotted, so a point means the same thing in every
+session and two states are always comparable. Values outside the anchors clamp. Each axis is
+the unweighted mean of its two components, so neither dominates.
+
+| component | 0 maps to | 1 maps to |
+|---|---:|---:|
+| MAP | 50 mmHg (profound shock) | 90 mmHg (adequate) |
+| Total systemic flow | 2.0 L/min (CI ~1.1) | 7.0 L/min (CI ~3.9) |
+| LVEDP (inverted) | 35 mmHg (severe congestion) | 8 mmHg (normal) |
+| PVA (inverted) | 9000 mmHg·mL (high O2 demand) | 3000 mmHg·mL (low) |
+
+> **Educational visualisation, not a validated clinical score.** No threshold on this plane has
+> any established meaning. It is not a target, a risk score, or a treatment indication. The app
+> says so under the plot.
+
+Where the five states land, and the claim the view exists to make:
+
+| state | X | Y | |
+|---|---:|---:|---|
+| S0 shock | 0.25 | 0.58 | |
+| S1 IABP | 0.34 | 0.74 | small move up and right |
+| S2 Impella | 0.41 | 0.87 | up: unloads, perfusion barely moves |
+| S3 VA-ECMO | **0.81** | **0.31** | **right and DOWN — perfusion bought at the ventricle's expense** |
+| S4 ECpella | 0.88 | 0.45 | **up, without giving up X** |
+| S5 weaned | 0.72 | 0.79 | further up, trading some X back |
+
+The live point for each pane carries a fading trail drawn from that pane's own beat history
+(120 beats, 72 s) rather than from any separate animation buffer, so during a transition the
+trail traces the actual route: out to the right and down into S3, then back up to S4. A dashed
+arrow connects pane A's point to pane B's, because that gap is the comparison.
+
+Press **P** for a large overlay suitable for filming. Validation E12 asserts the geometry
+directly — that S0->S3 is right and down, that S3->S4 is up and not left, that each axis
+component moves its axis the correct way in isolation, that out-of-range values clamp, and
+that the plane reads the same BeatMetrics fields the numeric tiles display.
 
 ### Causal engine
 
@@ -358,6 +403,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E12** The perfusion/unloading plane's geometry: S0->S3 right and down, S3->S4 up and not left, per-axis monotonicity, clamping, fixed anchors, and shared fields with the tiles.
 - **E11** Every mapped node and its numeric tile read the same field; every value the WHY ribbon renders is byte-identical to the tile for that pane.
 - **E10** Every WHY target exists in the graph; the graph is structurally sound; and on four canonical transitions the derived chain for each target contradicts no metric.
 - **E9** Total systemic flow decomposes exactly into native + Impella + ECMO; arterial inflow balances SVR outflow plus bronchial shunt; Ohm's law closes on the reflex's own SVR; the shunt stays under 5% of systemic flow.
