@@ -44,4 +44,23 @@ export function fmt(x: number, digits: number): string {
   return r === '-0' || r === '-0.0' ? r.slice(1) : r;
 }
 
+/**
+ * Which numeric tile represents which causal-graph node. The harness asserts that
+ * each pair reads the same BeatMetrics field at the same precision, so the WHY
+ * ribbon and the tile can never quote different numbers for the same variable.
+ */
+export const NODE_TILE: Record<string, MetricDef> = {
+  map: M.map,
+  lvedp: M.lvedp,
+  lvedv: M.lvedv,
+  nativeSv: M.nativeSv,
+  avOpen: M.av,
+  pva: M.pva,
+  dpti: M.dpti,
+  totalFlow: M.total,
+  svr: M.svr,
+  impellaFlow: M.impella,
+  ecmoFlow: M.ecmo,
+};
+
 export const DELTA_KEYS = ['map', 'total', 'svr', 'lvedp', 'lvedv', 'nativeSv', 'av', 'pva'] as const;

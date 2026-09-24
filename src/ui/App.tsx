@@ -105,7 +105,15 @@ export function App() {
         <Deltas engine={engine} version={version} />
         <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
       </main>
-      {why && <ChainRibbon why={why} onDismiss={stop} />}
+      {why && engine.left.metrics && engine.right.metrics && (
+        <ChainRibbon
+          why={why}
+          pre={engine.left.metrics}
+          post={engine.right.metrics}
+          settled={engine.left.settled && engine.right.settled}
+          onDismiss={stop}
+        />
+      )}
       {noPath && (
         <div className="chainbar nopath">
           No chain in the graph links the current intervention to that variable, and it did not move

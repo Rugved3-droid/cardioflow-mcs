@@ -38,24 +38,29 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await page.keyboard.press('5'); await sleep(9000); await shot('2-s4');
     await page.keyboard.press('2'); await sleep(6000); await shot('3-iabp');
   } else if (scenario === 'why') {
+    const READ = '(function(){var panes=document.querySelectorAll(\'.pane\');var b=panes[panes.length-1];var nums=Array.prototype.slice.call(b.querySelectorAll(\'.num\'));var want=[\'MAP\',\'LVEDP\',\'Native SV\',\'LVEDV\'];var out={};for(var i=0;i<want.length;i++){for(var j=0;j<nums.length;j++){var k=nums[j].querySelector(\'.k\');if(k&&k.textContent.indexOf(want[i])===0){out[want[i]]=nums[j].querySelector(\'.v\').textContent.trim();break;}}}var chain=Array.prototype.map.call(document.querySelectorAll(\'.cstep\'),function(c){return c.textContent.trim();});return {tiles:out,chain:chain,settling:!!document.querySelector(\'.settling\')};})()';
+    const CLICK = '(function(){var panes=document.querySelectorAll(\'.pane\');var b=panes[panes.length-1];var nums=Array.prototype.slice.call(b.querySelectorAll(\'.num\'));for(var j=0;j<nums.length;j++){var k=nums[j].querySelector(\'.k\');if(k&&k.textContent.indexOf(\'LVEDP\')===0){var btn=nums[j].querySelector(\'.why\');if(btn){btn.click();return true;}}}return false;})()';
+    type Pair = { tiles: Record<string, string>; chain: string[]; settling: boolean };
+    const report = async (when: string) => {
+      const r = (await page.evaluate(READ)) as Pair;
+      console.log(when + '  settling badge: ' + r.settling);
+      console.log('  tiles: ' + JSON.stringify(r.tiles));
+      console.log('  chain: ' + r.chain.join('  |  '));
+      return r;
+    };
+
     await page.keyboard.press('4');
-    await sleep(14000);
-    await shot('0-s3');
-    // click the WHY control on LVEDP in pane B
-    const ok = await page.evaluate(() => {
-      const panes = document.querySelectorAll('.pane');
-      const b = panes[panes.length - 1];
-      const btn = [...b.querySelectorAll('.num')].find((n) => n.querySelector('.k')?.textContent?.startsWith('LVEDP'))?.querySelector('.why') as HTMLButtonElement | undefined;
-      if (btn) { btn.click(); return true; } return false;
-    });
-    console.log('clicked WHY on LVEDP:', ok);
-    await sleep(400); await shot('1-step0');
-    await sleep(500); await shot('2-step2');
-    await sleep(1400); await shot('3-complete');
-    const chain = await page.evaluate(() => [...document.querySelectorAll('.cnode')].map((n) => n.textContent).join(' | '));
-    console.log('CHAIN:', chain);
-    const mech = await page.evaluate(() => document.querySelector('.chain-mech')?.textContent);
-    console.log('MECH:', mech);
+    await sleep(15000);
+    await page.evaluate(CLICK);
+    await sleep(2200);
+    await shot('1-transient');
+    await report('AT ~17s ');
+
+    await sleep(45000);
+    await page.evaluate(CLICK);
+    await sleep(2200);
+    await shot('2-settled');
+    await report('AT ~62s ');
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

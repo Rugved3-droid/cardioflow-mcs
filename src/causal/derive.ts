@@ -119,17 +119,57 @@ export function derivePath(targetId: string, pre: BeatMetrics, post: BeatMetrics
   return best;
 }
 
+/**
+ * Re-read every step of an already-derived path against the CURRENT pane metrics.
+ *
+ * The path structure is fixed when the chain is derived; the numbers are not. The
+ * ribbon renders from this, and the numeric tiles render from the same BeatMetrics
+ * objects, so the two cannot disagree in a single frame. `contradicted` flags a step
+ * whose live direction no longer matches the direction the chain claims, which can
+ * happen while an intervention is still equilibrating.
+ */
+export interface LiveStep {
+  step: PathStep;
+  obs: Observation | null;
+  contradicted: boolean;
+}
+
+export function liveSteps(path: CausalPath, pre: BeatMetrics, post: BeatMetrics): LiveStep[] {
+  return path.steps.map((step) => {
+    const obs = observe(step.node, pre, post);
+    return { step, obs, contradicted: !!obs && obs.dir !== step.dir };
+  });
+}
+
+/**
+ * Nodes permitted to have no metric of their own. Anything not listed here must be
+ * measurable, so a new unobservable node fails the build rather than quietly using
+ * up the one allowance E10 grants per chain.
+ */
+export const UNOBSERVABLE_ALLOWED: ReadonlySet<string> = new Set(['arterialVolume']);
+
 /** Targets offered as a "WHY?" control. */
 export const WHY_TARGETS = ['map', 'lvedp', 'nativeSv', 'avOpen'] as const;
 export type WhyTarget = (typeof WHY_TARGETS)[number];
 
-/** Sanity: every edge references nodes that exist. Used by the validation harness. */
+/** Sanity: every edge references nodes that exist, and no node is silently unmeasurable. */
 export function graphIntegrity(): string[] {
   const problems: string[] = [];
   for (const e of EDGES) {
     if (!NODES[e.from]) problems.push(`edge from unknown node "${e.from}"`);
     if (!NODES[e.to]) problems.push(`edge to unknown node "${e.to}"`);
     if (!e.mechanism.trim()) problems.push(`edge ${e.from}->${e.to} has no mechanism string`);
+  }
+  for (const n of Object.values(NODES)) {
+    if (!n.metric && !UNOBSERVABLE_ALLOWED.has(n.id)) {
+      problems.push(`node "${n.id}" has no metric and is not on the unobservable whitelist`);
+    }
+    if (n.metric && UNOBSERVABLE_ALLOWED.has(n.id)) {
+      problems.push(`node "${n.id}" is on the unobservable whitelist but now has a metric - remove it`);
+    }
+  }
+  for (const id of UNOBSERVABLE_ALLOWED) {
+    if (!NODES[id]) problems.push(`unobservable whitelist names "${id}", which is not a node`);
   }
   return problems;
 }

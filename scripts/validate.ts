@@ -21,8 +21,9 @@ import { SLEW } from '../src/model/constants';
 import { ALL_THERAPY_IDS, THERAPY_STATES } from '../src/model/therapyStates';
 import { computeAllSteadyStates, type SteadyKey } from '../src/model/steadyStates';
 import { WOOD_PER_MMHG_S_ML } from '../src/model/baroreflex';
-import { derivePath, graphIntegrity, observeAll, WHY_TARGETS } from '../src/causal/derive';
+import { derivePath, graphIntegrity, liveSteps, observeAll, UNOBSERVABLE_ALLOWED, WHY_TARGETS } from '../src/causal/derive';
 import { EDGES, NODES } from '../src/causal/graph';
+import { fmt, NODE_TILE, val } from '../src/ui/metrics';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -451,13 +452,54 @@ function main() {
       // and are allowed, but at most one per chain, so a story cannot be built on
       // unobservable links.
       const inferred = path ? path.steps.filter((st) => !st.obs).length : 0;
+      const offWhitelist = path ? path.steps.filter((st) => !st.obs && !UNOBSERVABLE_ALLOWED.has(st.node.id)).length : 0;
       const contradictions = path ? path.steps.filter((st) => st.obs && st.obs.dir !== st.dir).length : 0;
-      const ok = !!path && path.steps.length >= 2 && contradictions === 0 && inferred <= 1;
+      const ok = !!path && path.steps.length >= 2 && contradictions === 0 && inferred <= 1 && offWhitelist === 0;
       const desc = path
         ? path.steps.map((st) => `${st.node.short}${st.dir === 'up' ? '↑' : st.dir === 'down' ? '↓' : '·'}${st.obs ? '' : '(inferred)'}`).join(' → ')
         : 'NO PATH';
       check('E10', `${t.name}: derived chain for ${NODES[target].short} matches the observed directions`, 'the narrated mechanism must be the one the numbers took; no step may contradict its metric', ok, desc);
     }
+  }
+
+  /* E11 — the WHY ribbon and the numeric tiles must never disagree.
+     Both read the same BeatMetrics objects through the same formatter, so this is an
+     identity rather than a tolerance; the check exists so a future refactor that breaks
+     the shared path fails loudly. Also confirms each node reads the tile's own field. */
+  {
+    const pairErrors: string[] = [];
+    for (const [nodeId, tile] of Object.entries(NODE_TILE)) {
+      const node = NODES[nodeId];
+      if (!node) { pairErrors.push(`${nodeId}: no such node`); continue; }
+      if (node.metric !== tile.key) pairErrors.push(`${nodeId}: node reads ${String(node.metric)}, tile reads ${String(tile.key)}`);
+    }
+    check('E11', 'every mapped node and its numeric tile read the same BeatMetrics field', 'the ribbon and the tile must be views of one number, not two', pairErrors.length === 0, pairErrors.join('; ') || `${Object.keys(NODE_TILE).length} node/tile pairs agree`);
+
+    const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh.S0);
+    const pre = sim.lastBeat!;
+    sim.setSettings(THERAPY_STATES.S3.settings);
+    checkedRun(sim, 90_000, 'E11');
+    const post = sim.lastBeat!;
+    let mismatches = 0;
+    let compared = 0;
+    for (const target of WHY_TARGETS) {
+      const path = derivePath(target, pre, post);
+      if (!path) continue;
+      for (const l of liveSteps(path, pre, post)) {
+        const tile = NODE_TILE[l.step.node.id];
+        if (!tile || !l.obs) continue;
+        compared++;
+        // what the ribbon renders for the "after" value
+        const ribbon = fmt(l.obs.after * (tile.scale ?? 1), tile.digits);
+        // what the numeric tile renders for the same pane
+        const displayed = fmt(val(post, tile), tile.digits);
+        if (ribbon !== displayed) {
+          mismatches++;
+          pairErrors.push(`${l.step.node.id}: ribbon "${ribbon}" vs tile "${displayed}"`);
+        }
+      }
+    }
+    check('E11', 'every chain value rendered by the ribbon is byte-identical to the tile for the same pane', 'no freeze-frame may show two different numbers for one variable', mismatches === 0 && compared > 0, mismatches ? pairErrors.slice(-3).join('; ') : `${compared} rendered values identical`);
   }
 
   /* Shipped snapshots match the current model */

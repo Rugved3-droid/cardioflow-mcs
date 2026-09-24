@@ -21,6 +21,16 @@ const MAX_FRAME_MS = 100;
 
 export type Side = 'left' | 'right';
 
+/**
+ * Beat-to-beat stability test. A pane counts as settled once the headline metrics
+ * stop moving between beats LAG apart, for NEEDED consecutive evaluations.
+ * Thresholds are calibrated so "settled" fires when every metric is within ~1% of
+ * its true steady state (see scripts/settling.ts).
+ */
+const SETTLE_LAG = 5;
+const SETTLE_NEEDED = 5;
+const SETTLE_TOL = { map: 0.07, lvedp: 0.06, nativeSv: 0.07, totalFlowLpm: 0.015 } as const;
+
 export class PaneRuntime {
   sim: Sim;
   readonly trace = new TraceBuffer();
@@ -28,6 +38,32 @@ export class PaneRuntime {
   beats: BeatMetrics[] = [];
   /** human label of what this reality is doing */
   label: string;
+  private stableCount = 0;
+
+  /** true once the headline metrics have stopped moving (see SETTLE_TOL) */
+  get settled(): boolean {
+    return this.stableCount >= SETTLE_NEEDED;
+  }
+
+  /** Call once per completed beat. */
+  noteBeat(m: BeatMetrics): void {
+    this.beats.push(m);
+    if (this.beats.length > 120) this.beats.shift();
+    const prev = this.beats[this.beats.length - 1 - SETTLE_LAG];
+    if (!prev) {
+      this.stableCount = 0;
+      return;
+    }
+    const steady = (Object.keys(SETTLE_TOL) as (keyof typeof SETTLE_TOL)[]).every(
+      (k) => Math.abs((m[k] as number) - (prev[k] as number)) <= SETTLE_TOL[k],
+    );
+    this.stableCount = steady ? this.stableCount + 1 : 0;
+  }
+
+  /** Reset the settling test — called when the therapy changes under this pane. */
+  markUnsettled(): void {
+    this.stableCount = 0;
+  }
 
   constructor(sim: Sim, label: string) {
     this.sim = sim;
@@ -96,6 +132,7 @@ export class TwinEngine {
     left.pv.copyFrom(src.pv);
     left.beats = src.beats.slice();
     this.left = left;
+    left.markUnsettled();
     this.applyRight(next, rightLabel);
     this.emit({ type: 'fork' });
   }
@@ -107,6 +144,7 @@ export class TwinEngine {
     this.right.pv.reference = ref ? ref.slice() : null;
     this.right.sim.setSettings(next);
     this.right.label = rightLabel;
+    this.right.markUnsettled();
     this.ticksSinceIntervention = 0;
   }
 
@@ -130,10 +168,8 @@ export class TwinEngine {
       this.ticksSinceIntervention++;
       if (this.left.sim.state.beat !== lb) {
         beat = true;
-        this.left.beats.push(this.left.sim.lastBeat!);
-        this.right.beats.push(this.right.sim.lastBeat!);
-        if (this.left.beats.length > 120) this.left.beats.shift();
-        if (this.right.beats.length > 120) this.right.beats.shift();
+        this.left.noteBeat(this.left.sim.lastBeat!);
+        this.right.noteBeat(this.right.sim.lastBeat!);
       }
     }
     if (beat) this.emit({ type: 'beat' });

@@ -260,5 +260,15 @@ table.score th { color: var(--dim); font-weight: 500; }
 .cval { font-size: 11px; color: var(--dim); }
 .cval.inferred { font-style: italic; color: var(--faint); }
 .chain-mech { flex: 1; min-width: 180px; font-size: 13px; color: var(--text); }
+.settling, .contra-note {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--rise);
+  border: 1px solid var(--rise); border-radius: 3px; padding: 1px 7px; white-space: nowrap;
+}
+.contra-note { color: var(--bad); border-color: var(--bad); }
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--rise); animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.cstep.contra .cnode { border-color: var(--bad); }
+.cstep.contra .cdir::after { content: ' ⚠'; color: var(--bad); }
 .btn.small { padding: 4px 10px; font-size: 12px; }
 @media (max-height: 820px) { .chainbar { min-height: 44px; padding: 5px 12px; } .chain-mech { font-size: 12px; } }

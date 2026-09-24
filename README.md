@@ -151,10 +151,28 @@ and plugs into the same `surfaces` field.
 Controls: hover any of MAP, LVEDP, native SV or AV opening for a **WHY?** button, or press
 **W** to step through the four in fixed order (deterministic, for the scripted demo).
 
+**Live numbers, and equilibration.** The path *structure* is fixed when the chain is
+derived; the *numbers* are re-read from the live pane metrics on every render, through the
+same formatter the numeric tiles use. The ribbon and the tiles are therefore two views of one
+number and cannot disagree in a freeze-frame — validation E11 asserts this as a
+byte-for-byte identity, not a tolerance.
+
+Interventions take time to equilibrate: the device ramp is rate-limited and the baroreflex
+effector has an 8 s time constant, so S0 -> S3 needs about 40 s to settle and MAP *overshoots*
+to 88 mmHg around t = 10 s before falling back to 81. A chain read during that window is a
+transient, so each pane runs a beat-to-beat stability test (headline metrics compared five
+beats apart, stable for five consecutive evaluations) and the ribbon shows a **still
+equilibrating** badge until it passes. Thresholds are calibrated so the badge clears when
+every metric is within 1% of its true steady state; measured worst case across the four
+canonical transitions is 0.62%, firing at 28-41 s. If a link's live direction momentarily
+reverses while the system equilibrates, that link is marked rather than quietly re-drawn.
+
 **Validation E10** re-derives the chain for all four targets on four canonical transitions and
 fails the build if any narrated step contradicts what its metric actually did. At most one
-link per chain may be an unobservable intermediate (arterial volume is the only such node), so
-an explanation cannot be built on unmeasured claims.
+link per chain may be an unobservable intermediate, and it must appear on an explicit
+whitelist (`UNOBSERVABLE_ALLOWED`, currently just arterial volume). A new node with no metric
+fails the build rather than silently consuming that allowance, and a whitelisted node that
+later gains a metric fails too, so the list cannot go stale.
 
 ### Where S3's 6.3 L/min comes from
 
@@ -340,6 +358,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E11** Every mapped node and its numeric tile read the same field; every value the WHY ribbon renders is byte-identical to the tile for that pane.
 - **E10** Every WHY target exists in the graph; the graph is structurally sound; and on four canonical transitions the derived chain for each target contradicts no metric.
 - **E9** Total systemic flow decomposes exactly into native + Impella + ECMO; arterial inflow balances SVR outflow plus bronchial shunt; Ohm's law closes on the reflex's own SVR; the shunt stays under 5% of systemic flow.
 - **E7** The simulator agrees with the answer key for every active item, and retired items are excluded from the learner-facing bank.
