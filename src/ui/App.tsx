@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TwinEngine } from '../runtime/TwinEngine';
 import { THERAPY_ORDER, THERAPY_STATES, type TherapyId } from '../model/therapyStates';
 import { Pane } from './Pane';
@@ -8,6 +8,9 @@ import { ExploreBar } from './ExploreBar';
 import { useFrameLoop } from './useFrameLoop';
 import { STEADY_LABEL } from './labels';
 import { PHENOTYPE } from '../model/patient';
+import { useWhy } from '../causal/useWhy';
+import { WHY_TARGETS } from '../causal/derive';
+import { ChainRibbon } from './ChainRibbon';
 
 type Mode = 'explore' | 'assess';
 
@@ -16,8 +19,28 @@ export function App() {
   const { register, version } = useFrameLoop(engine);
   const [mode, setMode] = useState<Mode>('explore');
   const [active, setActive] = useState<TherapyId | null>('S0');
+  const { why, start, stop, activeNode, chainNodes } = useWhy();
+  const chainIds = useMemo(() => new Set(chainNodes.map((n) => n.id)), [chainNodes]);
+
+  /** Explain a variable by diffing pane A (before) against pane B (after). */
+  const explain = (target: string) => {
+    const pre = engine.left.metrics;
+    const post = engine.right.metrics;
+    if (!pre || !post) return;
+    if (!start(target, pre, post)) setNoPath(target);
+  };
+  const [noPath, setNoPath] = useState<string | null>(null);
+  /** W steps through the WHY targets in a fixed order, so a scripted demo repeats exactly. */
+  const whyIdx = useRef(0);
+  useEffect(() => {
+    if (!noPath) return;
+    const t = window.setTimeout(() => setNoPath(null), 3500);
+    return () => window.clearTimeout(t);
+  }, [noPath]);
 
   const goState = (id: TherapyId) => {
+    stop();
+    whyIdx.current = 0;
     engine.fork(THERAPY_STATES[id].settings, THERAPY_STATES[id].name);
     setActive(id);
   };
@@ -36,6 +59,12 @@ export function App() {
       if (e.key === ' ') {
         engine.paused = !engine.paused;
         e.preventDefault();
+        return;
+      }
+      if (e.key === 'w' || e.key === 'W') {
+        const t = WHY_TARGETS[whyIdx.current % WHY_TARGETS.length];
+        whyIdx.current += 1;
+        explain(t);
         return;
       }
       if (mode !== 'explore') return;
@@ -72,10 +101,17 @@ export function App() {
         </div>
       </header>
       <main className="stage">
-        <Pane side="left" engine={engine} register={register} version={version} />
+        <Pane side="left" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} />
         <Deltas engine={engine} version={version} />
-        <Pane side="right" engine={engine} register={register} version={version} />
+        <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
       </main>
+      {why && <ChainRibbon why={why} onDismiss={stop} />}
+      {noPath && (
+        <div className="chainbar nopath">
+          No chain in the graph links the current intervention to that variable, and it did not move
+          measurably. Nothing is being asserted.
+        </div>
+      )}
       {mode === 'explore' ? (
         <ExploreBar engine={engine} version={version} active={active} onState={goState} />
       ) : (

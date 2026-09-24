@@ -11,7 +11,16 @@ import { CSSVAR, MONO } from './canvas';
 
 export const PV_AXES = { vMin: 0, vMax: 260, pMin: 0, pMax: 130 };
 
-export function drawPv(ctx: CanvasRenderingContext2D, w: number, h: number, pv: PvBuffer, p: PatientParams) {
+export type PvEmphasis = 'edp' | 'edv' | 'sv' | 'area' | 'esp';
+
+export function drawPv(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  pv: PvBuffer,
+  p: PatientParams,
+  emphasise: PvEmphasis | null = null,
+) {
   ctx.clearRect(0, 0, w, h);
   const L = 30, R = 8, T = 8, B = 20;
   const X = (v: number) => L + ((v - PV_AXES.vMin) / (PV_AXES.vMax - PV_AXES.vMin)) * (w - L - R);
@@ -104,6 +113,70 @@ export function drawPv(ctx: CanvasRenderingContext2D, w: number, h: number, pv: 
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
+  // causal highlight: mark the feature of the loop the active node refers to
+  if (emphasise && pv.history[0]) {
+    const loop = pv.history[0];
+    const n = loop.length / 2;
+    let edvI = 0, esvI = 0, peakI = 0;
+    for (let i = 0; i < n; i++) {
+      if (loop[i * 2] > loop[edvI * 2]) edvI = i;
+      if (loop[i * 2] < loop[esvI * 2]) esvI = i;
+      if (loop[i * 2 + 1] > loop[peakI * 2 + 1]) peakI = i;
+    }
+    const accent = CSSVAR('--focus');
+    ctx.save();
+    if (emphasise === 'area') {
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = accent;
+      path(loop, n);
+      ctx.closePath();
+      ctx.fill();
+    } else if (emphasise === 'sv') {
+      // the horizontal extent of the loop IS the stroke volume
+      const y = Y(PV_AXES.pMin + 6);
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(X(loop[esvI * 2]), y);
+      ctx.lineTo(X(loop[edvI * 2]), y);
+      ctx.stroke();
+      for (const i of [esvI, edvI]) {
+        ctx.beginPath();
+        ctx.moveTo(X(loop[i * 2]), y - 5);
+        ctx.lineTo(X(loop[i * 2]), y + 5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = accent;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('SV', (X(loop[esvI * 2]) + X(loop[edvI * 2])) / 2, y - 6);
+    } else {
+      const i = emphasise === 'esp' ? peakI : edvI;
+      const cx = X(loop[i * 2]);
+      const cy = Y(emphasise === 'edv' ? PV_AXES.pMin + 6 : loop[i * 2 + 1]);
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, emphasise === 'edv' ? Y(loop[i * 2 + 1]) : cy, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (emphasise === 'edv') {
+        ctx.moveTo(cx, Y(loop[i * 2 + 1]));
+        ctx.lineTo(cx, h - B);
+      } else {
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(L, cy);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  }
+
   if (pv.currentLen > 1) {
     ctx.lineWidth = 2.6;
     path(pv.current, pv.currentLen);

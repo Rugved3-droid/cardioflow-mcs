@@ -13,7 +13,7 @@ An educational simulator for mechanical circulatory support (IABP, Impella, VA-E
 
 Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-contained file: no install, no server, no network. It works in current Chrome and Edge.
 
-- **Explore:** keys **1–6** select S0–S5. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
+- **Explore:** keys **1–6** select S0–S5. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
 - **Resident session:** 10 prediction items, anonymous, about 10 minutes. Each item runs: predict → lock → watch the intervention run (3×) → reveal → pick a mechanism → see the causal chain.
 
 ### Session data
@@ -111,6 +111,50 @@ variable ever changes. S5 is the weaned configuration; it changes two things at 
 is offered as a management step rather than as a comparison.
 
 (Full values in `validation/report.md`.)
+
+### Causal engine
+
+`src/causal/graph.ts` holds an explicit directed graph of model variables: 17 nodes and 22
+typed edges. Each edge carries a sign (+1 = same direction, -1 = opposite) and a one-clause
+mechanism string. It is a data structure, not prose, and there are no canned paragraphs
+anywhere in the explanation path.
+
+**The chain is derived, not looked up.** On "WHY?", `derivePath` reads the real before beat
+(pane A) and after beat (pane B), works out which way each variable actually moved, and then
+walks the graph breadth-first accepting only edges whose predicted direction matches the
+observed one. The shortest consistent chain wins. If no consistent chain exists, the app says
+so rather than inventing one.
+
+So the same button produces different chains on different interventions, because the numbers
+differ. On S0 -> S3 it yields:
+
+    ECMO flow up 0.0 -> 4.0 L/min
+      -> arterial volume up      (the circuit returns blood retrograde into the aorta)
+      -> MAP up 62 -> 86 mmHg    (more volume in a compliant arterial tree raises its pressure)
+      -> LV afterload up 53 -> 80 mmHg
+      -> native SV down 30 -> 20 mL   (a weak ventricle ejects less against a higher pressure)
+      -> LVEDV up 188 -> 215 mL  (blood not ejected stays in the ventricle)
+      -> LVEDP up 20 -> 28 mmHg  (on a steep exponential EDPVR, a little more volume is a lot
+                                  more pressure)
+
+while on S3 -> S4 the same target yields the three-link chain
+`Impella flow up -> LVEDV down -> LVEDP down`.
+
+**Highlighting.** The walk takes ~1.5 s total (minimum 230 ms per link, so long chains stay
+readable). At each step the active node lights up simultaneously on every surface it appears
+on: the numeric tile, the pressure waveform (its traces stay at full strength while the rest
+dim), the PV loop (the relevant feature is marked - the end-diastolic point, the stroke-volume
+bracket, the enclosed area), and the device chips. Which surfaces a node touches is declared
+on the node itself, so the graph stays the single source of truth. The anatomy layer is step 5
+and plugs into the same `surfaces` field.
+
+Controls: hover any of MAP, LVEDP, native SV or AV opening for a **WHY?** button, or press
+**W** to step through the four in fixed order (deterministic, for the scripted demo).
+
+**Validation E10** re-derives the chain for all four targets on four canonical transitions and
+fails the build if any narrated step contradicts what its metric actually did. At most one
+link per chain may be an unobservable intermediate (arterial volume is the only such node), so
+an explanation cannot be built on unmeasured claims.
 
 ### Where S3's 6.3 L/min comes from
 
@@ -296,6 +340,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E10** Every WHY target exists in the graph; the graph is structurally sound; and on four canonical transitions the derived chain for each target contradicts no metric.
 - **E9** Total systemic flow decomposes exactly into native + Impella + ECMO; arterial inflow balances SVR outflow plus bronchial shunt; Ohm's law closes on the reflex's own SVR; the shunt stays under 5% of systemic flow.
 - **E7** The simulator agrees with the answer key for every active item, and retired items are excluded from the learner-facing bank.
 - **E8** The stroke-work response to VA-ECMO changes sign with contractility, reconciling this model with Ostadal 2015; native SV and AV opening fall at every phenotype; the shipped patient is the afterload-dominant one.

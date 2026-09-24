@@ -46,7 +46,17 @@ function anyNonZero(tb: TraceBuffer, ch: TraceChannel): boolean {
   return false;
 }
 
-export function drawWave(ctx: CanvasRenderingContext2D, w: number, h: number, tb: TraceBuffer, tick: number) {
+export function drawWave(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  tb: TraceBuffer,
+  tick: number,
+  /** when set, these traces stay at full strength and everything else is dimmed */
+  emphasise: readonly TraceChannel[] | null = null,
+) {
+  const lit = (c: TraceChannel) => !emphasise || emphasise.includes(c);
+  const dim = 0.16;
   ctx.clearRect(0, 0, w, h);
   const strip = Math.round(h * 0.22);
   const pTop = 8;
@@ -88,32 +98,42 @@ export function drawWave(ctx: CanvasRenderingContext2D, w: number, h: number, tb
 
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = CSSVAR('--la');
-  ctx.globalAlpha = 0.8;
+  ctx.globalAlpha = lit('pPv') ? 0.8 : dim;
   strokeChannel(ctx, tb, 'pPv', tick, ww, pTop, pBot, P_MAX);
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 2.4;
+  ctx.lineWidth = lit('pLv') && emphasise ? 3.4 : 2.4;
+  ctx.globalAlpha = lit('pLv') ? 1 : dim;
   ctx.strokeStyle = CSSVAR('--lv');
   strokeChannel(ctx, tb, 'pLv', tick, ww, pTop, pBot, P_MAX);
+  ctx.lineWidth = lit('pAo') && emphasise ? 3.4 : 2.4;
+  ctx.globalAlpha = lit('pAo') ? 1 : dim;
   ctx.strokeStyle = CSSVAR('--ao');
   strokeChannel(ctx, tb, 'pAo', tick, ww, pTop, pBot, P_MAX);
+  ctx.globalAlpha = 1;
 
   // device strip: flows in L/min (0-6), balloon volume (0-40 mL)
   const s0 = h - strip + 4;
   const s1 = h - 3;
   ctx.lineWidth = 1.8;
   if (anyNonZero(tb, 'qImpella')) {
+    ctx.globalAlpha = lit('qImpella') ? 1 : dim;
+    ctx.lineWidth = lit('qImpella') && emphasise ? 3 : 1.8;
     ctx.strokeStyle = CSSVAR('--impella');
     strokeChannel(ctx, tb, 'qImpella', tick, ww, s0, s1, 7, 0.06);
   }
   if (anyNonZero(tb, 'qEcmo')) {
+    ctx.globalAlpha = lit('qEcmo') ? 1 : dim;
+    ctx.lineWidth = lit('qEcmo') && emphasise ? 3 : 1.8;
     ctx.strokeStyle = CSSVAR('--ecmo');
     strokeChannel(ctx, tb, 'qEcmo', tick, ww, s0, s1, 7, 0.06);
   }
   if (anyNonZero(tb, 'vBalloon')) {
+    ctx.globalAlpha = lit('vBalloon') ? 1 : dim;
+    ctx.lineWidth = lit('vBalloon') && emphasise ? 3 : 1.8;
     ctx.strokeStyle = CSSVAR('--balloon');
     strokeChannel(ctx, tb, 'vBalloon', tick, ww, s0, s1, 45);
   }
 
+  ctx.globalAlpha = 1;
   // write head
   const head = (((tick % SWEEP_MS) / TRACE_DECIM) / TRACE_SLOTS) * ww;
   ctx.fillStyle = CSSVAR('--panel');

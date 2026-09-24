@@ -19,8 +19,10 @@ import type { BeatMetrics, DeviceSettings, PatientParams, Sample } from '../src/
 import { IABP_TIMINGS, type IabpTimingName } from '../src/model/devices/iabp';
 import { SLEW } from '../src/model/constants';
 import { ALL_THERAPY_IDS, THERAPY_STATES } from '../src/model/therapyStates';
-import { computeAllSteadyStates } from '../src/model/steadyStates';
+import { computeAllSteadyStates, type SteadyKey } from '../src/model/steadyStates';
 import { WOOD_PER_MMHG_S_ML } from '../src/model/baroreflex';
+import { derivePath, graphIntegrity, observeAll, WHY_TARGETS } from '../src/causal/derive';
+import { EDGES, NODES } from '../src/causal/graph';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -421,6 +423,42 @@ function main() {
     RETIRED_ITEMS.every((i) => !i.active) && ACTIVE_ITEMS.every((i) => i.active),
     `${ACTIVE_ITEMS.length} active / ${RETIRED_ITEMS.length} retired`,
   );
+
+  /* E10 — causal graph. The chain the app narrates is derived from the pre/post diff,
+     so it must agree with the numbers on every canonical transition. A graph that can
+     tell a story the data does not support is worse than no graph. */
+  check('E10', 'every WHY target the UI offers exists as a graph node', 'a control that cannot explain anything should not be on screen', WHY_TARGETS.every((t) => !!NODES[t]), WHY_TARGETS.join(', '));
+  check('E10', 'graph is structurally sound (no dangling nodes, every edge carries a mechanism)', 'the graph is a data structure, not prose', graphIntegrity().length === 0, graphIntegrity().join('; ') || `${Object.keys(NODES).length} nodes, ${EDGES.length} edges`);
+
+  const transitions: { name: string; from: SteadyKey; to: Partial<DeviceSettings> }[] = [
+    { name: 'S0→S3 (VA-ECMO on)', from: 'S0', to: THERAPY_STATES.S3.settings },
+    { name: 'S3→S4 (Impella added, circuit held)', from: 'S3', to: THERAPY_STATES.S4.settings },
+    { name: 'S0→S2 (Impella alone)', from: 'S0', to: THERAPY_STATES.S2.settings },
+    { name: 'S0→S1 (IABP on)', from: 'S0', to: THERAPY_STATES.S1.settings },
+  ];
+  for (const t of transitions) {
+    const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[t.from]);
+    const pre = sim.lastBeat!;
+    sim.setSettings(t.to);
+    checkedRun(sim, 90_000, `E10/${t.name}`);
+    const post = sim.lastBeat!;
+    const obs = observeAll(pre, post);
+    for (const target of WHY_TARGETS) {
+      if (!obs[target] || obs[target].dir === 'same') continue;
+      const path = derivePath(target, pre, post);
+      // Every step that HAS a metric must match what that metric actually did. Steps
+      // without one (arterial volume is the only such node) are genuine intermediates
+      // and are allowed, but at most one per chain, so a story cannot be built on
+      // unobservable links.
+      const inferred = path ? path.steps.filter((st) => !st.obs).length : 0;
+      const contradictions = path ? path.steps.filter((st) => st.obs && st.obs.dir !== st.dir).length : 0;
+      const ok = !!path && path.steps.length >= 2 && contradictions === 0 && inferred <= 1;
+      const desc = path
+        ? path.steps.map((st) => `${st.node.short}${st.dir === 'up' ? '↑' : st.dir === 'down' ? '↓' : '·'}${st.obs ? '' : '(inferred)'}`).join(' → ')
+        : 'NO PATH';
+      check('E10', `${t.name}: derived chain for ${NODES[target].short} matches the observed directions`, 'the narrated mechanism must be the one the numbers took; no step may contradict its metric', ok, desc);
+    }
+  }
 
   /* Shipped snapshots match the current model */
   check(

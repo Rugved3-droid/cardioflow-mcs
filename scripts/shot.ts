@@ -37,6 +37,25 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await page.keyboard.press('4'); await sleep(9000); await shot('1-s3');
     await page.keyboard.press('5'); await sleep(9000); await shot('2-s4');
     await page.keyboard.press('2'); await sleep(6000); await shot('3-iabp');
+  } else if (scenario === 'why') {
+    await page.keyboard.press('4');
+    await sleep(14000);
+    await shot('0-s3');
+    // click the WHY control on LVEDP in pane B
+    const ok = await page.evaluate(() => {
+      const panes = document.querySelectorAll('.pane');
+      const b = panes[panes.length - 1];
+      const btn = [...b.querySelectorAll('.num')].find((n) => n.querySelector('.k')?.textContent?.startsWith('LVEDP'))?.querySelector('.why') as HTMLButtonElement | undefined;
+      if (btn) { btn.click(); return true; } return false;
+    });
+    console.log('clicked WHY on LVEDP:', ok);
+    await sleep(400); await shot('1-step0');
+    await sleep(500); await shot('2-step2');
+    await sleep(1400); await shot('3-complete');
+    const chain = await page.evaluate(() => [...document.querySelectorAll('.cnode')].map((n) => n.textContent).join(' | '));
+    console.log('CHAIN:', chain);
+    const mech = await page.evaluate(() => document.querySelector('.chain-mech')?.textContent);
+    console.log('MECH:', mech);
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

@@ -218,3 +218,47 @@ table.score { border-collapse: collapse; font-family: var(--mono); font-size: 13
 table.score td, table.score th { padding: 3px 12px 3px 0; text-align: left; }
 table.score th { color: var(--dim); font-weight: 500; }
 .headline { font-size: 22px; font-weight: 700; }
+
+/* ---------- causal highlight ---------- */
+.num { position: relative; transition: background 0.25s, box-shadow 0.25s; }
+.num.chained { background: #131c26; }
+.num.lit {
+  background: #1b2836;
+  box-shadow: inset 0 0 0 1.5px var(--focus), 0 0 18px -4px var(--focus);
+}
+.num .k { display: flex; align-items: center; gap: 6px; }
+.why {
+  background: transparent; border: 1px solid var(--line); color: var(--faint);
+  border-radius: 3px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  padding: 0 3px; cursor: pointer; line-height: 1.5; opacity: 0; transition: opacity 0.15s;
+}
+.num:hover .why, .why:focus-visible { opacity: 1; }
+.why:hover { color: var(--text); border-color: var(--faint); }
+.chip { transition: box-shadow 0.25s, background 0.25s; }
+.chip.lit { box-shadow: 0 0 0 1.5px currentColor, 0 0 16px -3px currentColor; background: #1b2836; }
+
+.chainbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 8px 16px; border-top: 1px solid var(--line);
+  background: var(--panel-2); min-height: 52px;
+}
+.chainbar.nopath { color: var(--dim); font-size: 13px; }
+.chain-steps { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; font-family: var(--mono); }
+.cstep { display: inline-flex; align-items: center; gap: 6px; opacity: 0; transform: translateY(3px); transition: opacity 0.25s, transform 0.25s; }
+.cstep.on { opacity: 1; transform: none; }
+.carrow { color: var(--faint); font-style: normal; margin: 0 4px; }
+.cnode {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; background: var(--panel);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+.cstep.now .cnode { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus), 0 0 16px -4px var(--focus); }
+.cnode b { font-size: 12px; font-weight: 650; }
+.cdir { font-style: normal; font-size: 13px; }
+.cstep.up .cdir { color: var(--rise); }
+.cstep.down .cdir { color: var(--fall); }
+.cval { font-size: 11px; color: var(--dim); }
+.cval.inferred { font-style: italic; color: var(--faint); }
+.chain-mech { flex: 1; min-width: 180px; font-size: 13px; color: var(--text); }
+.btn.small { padding: 4px 10px; font-size: 12px; }
+@media (max-height: 820px) { .chainbar { min-height: 44px; padding: 5px 12px; } .chain-mech { font-size: 12px; } }
