@@ -26,6 +26,9 @@ import { EDGES, NODES } from '../src/causal/graph';
 import { fmt, M, NODE_TILE, val } from '../src/ui/metrics';
 import { ANCHORS, planePoint } from '../src/plane/plane';
 import { COMPRESS_RATE, TwinEngine } from '../src/runtime/TwinEngine';
+import { DemoRunner, traceSignature } from '../src/demo/runner';
+import { DEMO_SCRIPT } from '../src/demo/script';
+import { derivePath as derivePathForDemo } from '../src/causal/derive';
 import { GEO, NODE_PART, PATHS, pointAt } from '../src/anatomy/layout';
 import { ANATOMY_READS, arrowCountFor } from '../src/ui/drawAnatomy';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
@@ -670,6 +673,49 @@ function main() {
       }
     }
     check('E14', 'every shipped snapshot is genuinely converged (30 s more changes nothing beyond 0.05)', 'the engine declares snapshots settled on load; that claim has to be true', worstDrift < 0.05, `worst drift ${worstDrift.toFixed(4)} (${worstKey})`);
+  }
+
+  /* E15 — the scripted demo. It must produce an identical run every time, must never
+     show a causal chain while values are still moving, and must finish on its own. */
+  {
+    const runDemo = (chunk: number) => {
+      const eng = new TwinEngine('S0', 'S0');
+      const whyAt: { target: string; beat: number; settled: boolean; hasPath: boolean }[] = [];
+      const runner = new DemoRunner(eng, {
+        onTherapy: (id) => eng.fork(THERAPY_STATES[id].settings, THERAPY_STATES[id].name),
+        onCaption: () => {},
+        onPanel: () => {},
+        onDismissWhy: () => {},
+        onWhy: (target) => {
+          const pre = eng.left.metrics;
+          const post = eng.right.metrics;
+          whyAt.push({
+            target,
+            beat: eng.left.sim.state.beat,
+            settled: eng.settled,
+            hasPath: !!(pre && post && derivePathForDemo(target, pre, post)),
+          });
+        },
+      });
+      runner.start();
+      let guard = 0;
+      while (runner.running && guard < 400_000) {
+        runner.update();
+        eng.stepTicks(chunk);
+        guard += chunk;
+      }
+      return { sig: traceSignature(runner.trace), trace: runner.trace, whyAt, ticks: guard, violated: runner.violatedChainRule, finished: !runner.running };
+    };
+
+    const a = runDemo(17);
+    const b = runDemo(17);
+    const c = runDemo(133); // the 8x compressed path
+    check('E15', 'two demo runs produce an identical trace (same steps, same cardiac beats)', 'take 2 must equal take 1, or it cannot be filmed', a.sig === b.sig, a.sig === b.sig ? `${a.trace.length} steps, signature ${a.sig.slice(0, 48)}…` : 'DIFFERS');
+    check('E15', 'the demo trace is identical at 1x and at the 8x compressed rate', 'time compression must not change the script either', a.sig === c.sig, a.sig === c.sig ? 'identical' : `1x: ${a.sig.slice(0, 60)} vs 8x: ${c.sig.slice(0, 60)}`);
+    check('E15', 'the demo reaches the end of its script and stops by itself', 'no manual key press on camera', a.finished && a.trace.length === DEMO_SCRIPT.length, `${a.trace.length}/${DEMO_SCRIPT.length} steps, ${(a.ticks / 1000).toFixed(0)} s of simulated time`);
+    check('E15', 'every scripted WHY fires only once both panes have settled', 'a chain narrated over moving values would be telling a story the numbers have not finished making', a.whyAt.length > 0 && a.whyAt.every((w) => w.settled), a.whyAt.map((w) => `${w.target}@beat ${w.beat} settled=${w.settled}`).join(', ') || 'no WHY in script');
+    check('E15', 'every scripted WHY has a derivable causal chain at the moment it fires', 'the script must not ask for an explanation the graph cannot give', a.whyAt.every((w) => w.hasPath), a.whyAt.map((w) => `${w.target}:${w.hasPath ? 'ok' : 'NO PATH'}`).join(', '));
+    check('E15', 'the script never starts an intervention while a causal chain is still displayed', 'a chain left up across a transition would be narrating the previous one', !a.violated && !c.violated, a.violated || c.violated ? 'VIOLATED' : 'chain explicitly dismissed before every subsequent intervention');
   }
 
   /* Shipped snapshots match the current model */

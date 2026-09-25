@@ -118,6 +118,27 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await shot('1-settled');
     const after = await page.evaluate(READ) as { settling: boolean };
     console.log('equilibrating badge still showing:', after.settling);
+  } else if (scenario === 'demo') {
+    const READ = '(function(){var b=document.querySelector(".demo-badge");var c=document.querySelector(".caption-bar");var f=document.querySelector(".ffwd");var s=document.querySelector(".settling");var ch=document.querySelectorAll(".cstep").length;return {badge:b?b.textContent.trim():null,cap:c?c.textContent.trim():"",ff:!!f,settling:!!s,chain:ch};})()';
+    const t0 = Date.now();
+    await page.keyboard.press('d');
+    const seen: string[] = [];
+    let violations = 0;
+    let shots = 0;
+    for (let i = 0; i < 400; i++) {
+      await sleep(400);
+      const r = (await page.evaluate(READ)) as { badge: string | null; cap: string; ff: boolean; settling: boolean; chain: number };
+      if (!r.badge) { console.log('demo finished after', ((Date.now() - t0) / 1000).toFixed(1), 's wall clock'); break; }
+      if (r.cap && seen[seen.length - 1] !== r.cap) {
+        seen.push(r.cap);
+        console.log(`  [${((Date.now() - t0) / 1000).toFixed(1).padStart(5)}s] ${r.badge.split(' ')[1]}  ${r.cap.slice(0, 92)}`);
+        if (shots < 4) { await shot(String(shots)); shots++; }
+      }
+      // the rule under test: a chain must never be on screen while values still move
+      if (r.chain > 0 && r.settling) violations++;
+    }
+    console.log('captions seen: ' + seen.length);
+    console.log('WHY-while-equilibrating violations:', violations);
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

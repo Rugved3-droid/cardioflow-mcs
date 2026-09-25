@@ -13,7 +13,7 @@ An educational simulator for mechanical circulatory support (IABP, Impella, VA-E
 
 Open **`release/CardioFlow-MCS.html`** by double-clicking it. It is one self-contained file: no install, no server, no network. It works in current Chrome and Edge.
 
-- **Explore:** keys **1–6** select S0–S5. **A** opens the device/anatomy schematic full-screen, **P** the perfusion/unloading plane. **W** walks the causal chain for MAP, LVEDP, native SV and AV opening in turn; each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
+- **Explore:** press **?** for the key list. **D** runs the scripted demo hands-free. **1–6** select S0–S5; **A** and **P** open the anatomy and plane full-screen; **W** walks the causal chain, and each metric tile also has a **WHY?** button on hover. B takes the new therapy and A keeps the previous one. **Space** pauses. The B controls adjust ECMO flow, Impella P-level, and IABP on/timing/ratio.
 - **Resident session:** 10 prediction items, anonymous, about 10 minutes. Each item runs: predict → lock → watch the intervention run (3×) → reveal → pick a mechanism → see the causal chain.
 
 ### Session data
@@ -242,6 +242,46 @@ and plugs into the same `surfaces` field.
 
 Controls: hover any of MAP, LVEDP, native SV or AV opening for a **WHY?** button, or press
 **W** to step through the four in fixed order (deterministic, for the scripted demo).
+
+### Demo mode
+
+Press **D**. The scripted run sequences itself from start to finish with no further input and
+stops on its own; **Esc** aborts it. While it runs the script owns the keyboard, and the
+phenotype chip, disclaimer and mode toggle are hidden so the top bar does not wrap.
+
+Two rules make it reproducible on camera, and both are enforced rather than hoped for:
+
+1. **No step advances on wall-clock time.** Steps that follow an intervention wait for the
+   engine's own settling test, and holds are measured in *cardiac beats*, not seconds. The run
+   is therefore identical at any frame rate and at any time compression.
+2. **No step depends on where the last take left off.** The run begins by loading a shipped
+   steady state, which is bit-identical every time.
+
+Time compression is part of the script rather than a key press: an intervention turns it on
+and the settle gate turns it off.
+
+The sequencing lives in `src/demo/runner.ts` as a plain object with no React in it, so the
+harness drives the whole demo headlessly. Validation E15 asserts that two runs produce an
+identical trace (same steps, same cardiac beats), that the trace is identical at 1× and at the
+8× compressed rate, that the script reaches its end and stops by itself, that **every scripted
+WHY fires only once both panes have settled**, that each one has a derivable chain at the
+moment it fires, and that the script never starts an intervention while a chain is still
+displayed — a chain left up across a transition would be narrating the previous one.
+
+Measured: 15 steps, 145 s of simulated time, about 60 s of wall clock.
+
+### Keys
+
+| | |
+|---|---|
+| **1 – 6** | Select S0–S5. Pane B takes the new therapy, pane A continues the previous one. |
+| **W** | Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening. |
+| **P** | Perfusion / unloading plane, full screen. |
+| **A** | Device / anatomy schematic, full screen. |
+| **D** | Run the scripted demo. |
+| **Space** | Pause / resume. |
+| **Esc** | Stop the demo, or close an overlay. |
+| **?** | Key list. |
 
 ### Time compression
 
@@ -479,6 +519,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E15** The scripted demo produces an identical trace on every run and at every rate, finishes by itself, fires each WHY only once both panes have settled, and never starts an intervention with a chain still on screen.
 - **E14** Time compression is bit-identical at every supported rate; it starts on an intervention and ends by itself; shipped snapshots are genuinely converged.
 - **E13** The anatomy layer reads only instantaneous simulator fields; the cavity pulsates within a beat; arrow count is monotonic in flow; S4 draws a smaller LV than S3; every anatomy-surfaced node maps to a structure; paths are normalised; the ECMO return is geometrically retrograde.
 - **E12** The perfusion/unloading plane's geometry: S0->S3 right and down, S3->S4 up and not left, per-axis monotonicity, clamping, fixed anchors, and shared fields with the tiles.

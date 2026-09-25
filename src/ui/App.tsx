@@ -13,6 +13,8 @@ import { WHY_TARGETS } from '../causal/derive';
 import { ChainRibbon } from './ChainRibbon';
 import { PlanePanel } from './PlanePanel';
 import { AnatomyBand } from './AnatomyBand';
+import { useDemo } from '../demo/useDemo';
+import { DEMO_SCRIPT } from '../demo/script';
 
 type Mode = 'explore' | 'assess';
 
@@ -23,6 +25,7 @@ export function App() {
   const [active, setActive] = useState<TherapyId | null>('S0');
   const [planeBig, setPlaneBig] = useState(false);
   const [anatBig, setAnatBig] = useState(false);
+  const [help, setHelp] = useState(false);
   const { why, start, stop, activeNode, chainNodes } = useWhy();
   const chainIds = useMemo(() => new Set(chainNodes.map((n) => n.id)), [chainNodes]);
 
@@ -41,6 +44,8 @@ export function App() {
     const t = window.setTimeout(() => setNoPath(null), 3500);
     return () => window.clearTimeout(t);
   }, [noPath]);
+
+  const demo = useDemo(engine, (id) => goState(id));
 
   const goState = (id: TherapyId) => {
     stop();
@@ -65,6 +70,27 @@ export function App() {
         e.preventDefault();
         return;
       }
+      if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+        setHelp((v) => !v);
+        return;
+      }
+      if (e.key === 'Escape' && help) {
+        setHelp(false);
+        return;
+      }
+      if (e.key === 'd' || e.key === 'D') {
+        if (demo.running) demo.stop();
+        else {
+          setMode('explore');
+          demo.start();
+        }
+        return;
+      }
+      if (e.key === 'Escape' && demo.running) {
+        demo.stop();
+        return;
+      }
+      if (demo.running) return; // the script owns the keyboard while it runs
       if (e.key === 'a' || e.key === 'A') {
         setAnatBig((v) => !v);
         return;
@@ -88,6 +114,32 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  // the script asks for a WHY; fire it only once, and only once values have settled
+  useEffect(() => {
+    if (!demo.pendingWhy) return;
+    const pre = engine.left.metrics;
+    const post = engine.right.metrics;
+    if (!pre || !post || !engine.settled) return;
+    start(demo.pendingWhy, pre, post);
+    demo.clearWhy();
+  }, [demo.pendingWhy, version, engine, start, demo]);
+
+  useEffect(() => {
+    if (!demo.running) return;
+    setPlaneBig(demo.panel === 'plane');
+    setAnatBig(demo.panel === 'anatomy');
+  }, [demo.running, demo.panel]);
+
+  // the script clears the chain before it starts the next intervention
+  const dismissTick = demo.dismissWhy;
+  useEffect(() => {
+    if (dismissTick > 0) stop();
+  }, [dismissTick, stop]);
+
+  // the script advances on rendered frames, gated on simulator state
+  const demoUpdate = demo.update;
+  useEffect(() => register(() => demoUpdate()), [register, demoUpdate]);
+
   const simS = engine.tick / 1000;
   return (
     <div className="app">
@@ -95,12 +147,16 @@ export function App() {
         <div className="brand">
           CARDIOFLOW <span>MCS</span>
         </div>
+        {!demo.running && (
         <div className="phenotype" title={PHENOTYPE.summary}>
           <span className="ph-dot" aria-hidden="true" />
           {PHENOTYPE.short}
           <span className="ph-nums">Ees {PHENOTYPE.ees} · Ea/Ees ≈ {PHENOTYPE.eaOverEes} · EF ≈ {PHENOTYPE.ef}%</span>
         </div>
-        <div className="disclaimer">Educational model · not clinically validated · not for patient care</div>
+        )}
+        {!demo.running && (
+          <div className="disclaimer">Educational model · not clinically validated · not for patient care</div>
+        )}
         <div className="spacer" />
         {engine.compressing && (
           <div className="ffwd" title="Stepping more 1 ms ticks per frame while the intervention equilibrates. The tick, the physiology and every time constant are unchanged.">
@@ -113,10 +169,18 @@ export function App() {
           t <b>{simS.toFixed(1)}</b> s · HR <b>{engine.left.sim.p.hr}</b>
           {engine.paused && <> · <b>PAUSED</b></>}
         </div>
-        <div className="seg" role="tablist">
-          <button className={mode === 'explore' ? 'on' : ''} onClick={() => switchMode('explore')}>Explore</button>
-          <button className={mode === 'assess' ? 'on' : ''} onClick={() => switchMode('assess')}>Resident session</button>
-        </div>
+        {demo.running && (
+          <div className="demo-badge">
+            DEMO {demo.index + 1}/{DEMO_SCRIPT.length}
+            <span className="ff-sub">esc to stop</span>
+          </div>
+        )}
+        {!demo.running && (
+          <div className="seg" role="tablist">
+            <button className={mode === 'explore' ? 'on' : ''} onClick={() => switchMode('explore')}>Explore</button>
+            <button className={mode === 'assess' ? 'on' : ''} onClick={() => switchMode('assess')}>Resident session</button>
+          </div>
+        )}
       </header>
       <main className="stage">
         <Pane side="left" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} />
@@ -127,6 +191,27 @@ export function App() {
         <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
       </main>
       <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} />
+      {help && (
+        <div className="plane-overlay" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts">
+          <div className="helpbox" onClick={(e) => e.stopPropagation()}>
+            <h2>Keys</h2>
+            <dl>
+              <dt>1 – 6</dt><dd>Select S0–S5. Pane B takes the new therapy; pane A continues the previous one.</dd>
+              <dt>W</dt><dd>Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening.</dd>
+              <dt>P</dt><dd>Perfusion / unloading plane, full screen.</dd>
+              <dt>A</dt><dd>Device / anatomy schematic, full screen.</dd>
+              <dt>D</dt><dd>Run the scripted demo. It sequences itself and stops on its own.</dd>
+              <dt>Space</dt><dd>Pause / resume.</dd>
+              <dt>Esc</dt><dd>Stop the demo, or close this.</dd>
+              <dt>?</dt><dd>This list.</dd>
+            </dl>
+            <p className="muted small">
+              A therapy change compresses time 8× until both panes settle, then returns to real time
+              by itself. The tick stays 1 ms and no physiologic time constant changes.
+            </p>
+          </div>
+        </div>
+      )}
       {anatBig && (
         <div className="plane-overlay" onClick={() => setAnatBig(false)} role="dialog" aria-label="Device and anatomy schematic">
           <div className="anat-overlay-inner" onClick={(e) => e.stopPropagation()}>
@@ -154,6 +239,12 @@ export function App() {
         <div className="chainbar nopath">
           No chain in the graph links the current intervention to that variable, and it did not move
           measurably. Nothing is being asserted.
+        </div>
+      )}
+      {demo.running && demo.caption && (
+        <div className="caption-bar">
+          <span className="cap-dot" />
+          {demo.caption}
         </div>
       )}
       {mode === 'explore' ? (
