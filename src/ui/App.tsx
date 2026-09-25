@@ -102,9 +102,15 @@ export function App() {
         </div>
         <div className="disclaimer">Educational model · not clinically validated · not for patient care</div>
         <div className="spacer" />
+        {engine.compressing && (
+          <div className="ffwd" title="Stepping more 1 ms ticks per frame while the intervention equilibrates. The tick, the physiology and every time constant are unchanged.">
+            <i className="ff-icon">▶▶</i>
+            {engine.speed}× TIME COMPRESSED
+            <span className="ff-sub">equilibrating · physiology unchanged</span>
+          </div>
+        )}
         <div className="clock">
           t <b>{simS.toFixed(1)}</b> s · HR <b>{engine.left.sim.p.hr}</b>
-          {engine.speed !== 1 && <> · <b>{engine.speed}×</b></>}
           {engine.paused && <> · <b>PAUSED</b></>}
         </div>
         <div className="seg" role="tablist">

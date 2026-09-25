@@ -19,6 +19,20 @@ const SNAPSHOTS = steadyStates as unknown as Record<SteadyKey, SimSnapshot>;
 /** Longest wall-time slice honoured per frame (a stalled tab must not dump a burst of ticks). */
 const MAX_FRAME_MS = 100;
 
+/**
+ * Rate used while an intervention equilibrates.
+ *
+ * This steps more 1 ms ticks per rendered frame. It does NOT change the tick, and
+ * it does not touch any physiologic time constant. The sequence of ticks is
+ * identical, so the state after K ticks is bit-identical however those K ticks were
+ * distributed across frames — verified at every rate by validation E14, and measured
+ * at ~21% of a 60 fps frame budget for two panes.
+ *
+ * Time compression is a rendering decision. Settling is not shortened, only watched
+ * at a faster wall-clock rate.
+ */
+export const COMPRESS_RATE = 8;
+
 export type Side = 'left' | 'right';
 
 /**
@@ -38,7 +52,7 @@ export class PaneRuntime {
   beats: BeatMetrics[] = [];
   /** human label of what this reality is doing */
   label: string;
-  private stableCount = 0;
+  stableCount = 0;
 
   /** true once the headline metrics have stopped moving (see SETTLE_TOL) */
   get settled(): boolean {
@@ -65,6 +79,21 @@ export class PaneRuntime {
     this.stableCount = 0;
   }
 
+  /**
+   * Declare this pane settled without waiting for the beat-to-beat test.
+   * Only used when starting from a shipped steady-state snapshot, whose generation
+   * recipe runs far past convergence — a fact validation E14 checks rather than
+   * assumes.
+   */
+  markSettled(): void {
+    this.stableCount = SETTLE_NEEDED;
+  }
+
+  /** Carry a settling verdict across a fork, where the pane's physiology is unchanged. */
+  adoptSettling(src: PaneRuntime): void {
+    this.stableCount = src.stableCount;
+  }
+
   constructor(sim: Sim, label: string) {
     this.sim = sim;
     this.label = label;
@@ -89,6 +118,8 @@ export class TwinEngine {
   right: PaneRuntime;
   speed = 1;
   paused = false;
+  /** When true, a therapy change compresses time until both panes settle. */
+  autoCompress = true;
   /** ticks since the last intervention was applied to the right pane */
   ticksSinceIntervention = 0;
   private acc = 0;
@@ -103,6 +134,20 @@ export class TwinEngine {
     return this.left.sim.state.tick;
   }
 
+  /** True while time is being compressed to ride out an equilibration. */
+  get compressing(): boolean {
+    return this.speed > 1;
+  }
+
+  /** Both realities have stopped moving. */
+  get settled(): boolean {
+    return this.left.settled && this.right.settled;
+  }
+
+  private endCompressionIfSettled(): void {
+    if (this.autoCompress && this.speed > 1 && this.settled) this.speed = 1;
+  }
+
   on(fn: (e: EngineEvent) => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -115,6 +160,10 @@ export class TwinEngine {
   load(leftKey: SteadyKey, rightKey: SteadyKey = leftKey, leftLabel: string = leftKey, rightLabel: string = rightKey): void {
     this.left = new PaneRuntime(Sim.fromSnapshot(SHOCK_PATIENT, SNAPSHOTS[leftKey]), leftLabel);
     this.right = new PaneRuntime(Sim.fromSnapshot(SHOCK_PATIENT, SNAPSHOTS[rightKey]), rightLabel);
+    // shipped snapshots are converged by construction (E14 verifies it)
+    this.left.markSettled();
+    this.right.markSettled();
+    this.speed = 1;
     this.acc = 0;
     this.ticksSinceIntervention = 0;
     this.emit({ type: 'reset' });
@@ -131,8 +180,8 @@ export class TwinEngine {
     left.trace.copyFrom(src.trace);
     left.pv.copyFrom(src.pv);
     left.beats = src.beats.slice();
+    left.adoptSettling(src); // this pane's physiology did not change
     this.left = left;
-    left.markUnsettled();
     this.applyRight(next, rightLabel);
     this.emit({ type: 'fork' });
   }
@@ -145,6 +194,7 @@ export class TwinEngine {
     this.right.sim.setSettings(next);
     this.right.label = rightLabel;
     this.right.markUnsettled();
+    if (this.autoCompress) this.speed = COMPRESS_RATE;
     this.ticksSinceIntervention = 0;
   }
 
@@ -170,6 +220,7 @@ export class TwinEngine {
         beat = true;
         this.left.noteBeat(this.left.sim.lastBeat!);
         this.right.noteBeat(this.right.sim.lastBeat!);
+        this.endCompressionIfSettled();
       }
     }
     if (beat) this.emit({ type: 'beat' });

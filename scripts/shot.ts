@@ -100,6 +100,24 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await shot('1-step3-map');
     await sleep(1400);
     await shot('2-final-lvedp');
+  } else if (scenario === 'compress') {
+    const READ = '(function(){var b=document.querySelector(".ffwd");var s=document.querySelector(".settling");var c=document.querySelector(".clock b");return {ff:b?b.textContent.trim():null,settling:!!s,simT:c?c.textContent:null};})()';
+    const t0 = Date.now();
+    await page.keyboard.press('4');
+    await sleep(600);
+    const early = await page.evaluate(READ) as { ff: string | null; simT: string | null };
+    console.log('just after keypress: badge =', JSON.stringify(early.ff), ' simT =', early.simT);
+    await shot('0-compressing');
+    let endWall = -1;
+    for (let i = 0; i < 120; i++) {
+      await sleep(500);
+      const r = (await page.evaluate(READ)) as { ff: string | null; simT: string | null };
+      if (!r.ff) { endWall = Date.now() - t0; console.log('compression ended after', (endWall / 1000).toFixed(1), 's wall clock, at simT', r.simT); break; }
+    }
+    if (endWall < 0) console.log('COMPRESSION NEVER ENDED');
+    await shot('1-settled');
+    const after = await page.evaluate(READ) as { settling: boolean };
+    console.log('equilibrating badge still showing:', after.settling);
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

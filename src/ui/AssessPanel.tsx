@@ -18,9 +18,12 @@ import { STEADY_LABEL } from './labels';
 import { PHENOTYPE_NOTE } from '../model/patient';
 import { fmt } from './metrics';
 
-/** Simulated time the intervention runs before the reveal, and how fast it is shown. */
-const RUN_TICKS = 20_000;
-const RUN_SPEED = 3;
+/**
+ * The reveal waits for the panes to SETTLE rather than for a fixed duration, so a
+ * learner is never shown a transient as if it were the answer. Time compression
+ * carries the wait; the cap is a safety net, not the normal path.
+ */
+const SETTLE_CAP_TICKS = 120_000;
 
 type Phase = 'setup' | 'question' | 'running' | 'revealed' | 'mechRevealed' | 'done';
 
@@ -50,7 +53,6 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
 
   const startItem = (i: number) => {
     const it = ACTIVE_ITEMS[i];
-    engine.speed = 1;
     engine.load(it.from, it.from, STEADY_LABEL[it.from], STEADY_LABEL[it.from]);
     setIdx(i);
     setPick(null);
@@ -78,18 +80,18 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
     if (!pick) return;
     t.current.locked = performance.now();
     t.current.lockedAt = new Date().toISOString();
-    engine.applyRight(item.to, item.intervention);
-    engine.speed = RUN_SPEED;
+    engine.applyRight(item.to, item.intervention); // engine compresses time until settled
     setPhase('running');
   };
 
-  // advance from "running" to "revealed" once enough simulated time has passed
+  // advance from "running" to "revealed" once both panes have stopped moving
   useEffect(() => {
-    if (phase === 'running' && engine.ticksSinceIntervention >= RUN_TICKS) {
-      engine.speed = 1;
-      setPhase('revealed');
-      t.current.mechShown = performance.now();
-    }
+    if (phase !== 'running') return;
+    const done = engine.settled || engine.ticksSinceIntervention >= SETTLE_CAP_TICKS;
+    if (!done) return;
+    engine.speed = 1;
+    setPhase('revealed');
+    t.current.mechShown = performance.now();
   }, [version, phase, engine]);
 
   const lockMech = () => {
@@ -241,7 +243,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
   const oa = ma ? (ma[k] as number) : NaN;
   const ob = mb ? (mb[k] as number) : NaN;
   const obsDigits = item.observe.unit === 'of cycle' ? 2 : 0;
-  const progress = Math.min(engine.ticksSinceIntervention / RUN_TICKS, 1);
+  const progress = Math.min(engine.ticksSinceIntervention / 45_000, 1);
 
   return (
     <div className="drawer">
@@ -266,7 +268,7 @@ export function AssessPanel({ engine, version }: { engine: TwinEngine; version: 
         )}
         {phase === 'running' && (
           <span className="row">
-            <span className="mono small muted">RUNNING ⏩ {RUN_SPEED}×</span>
+            <span className="mono small muted">RUNNING {engine.compressing ? `⏩ ${engine.speed}×` : ''} · waiting for steady state</span>
             <span className="progress"><i style={{ width: `${progress * 100}%` }} /></span>
           </span>
         )}

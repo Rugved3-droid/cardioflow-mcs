@@ -71,6 +71,16 @@ button, input, select { font: inherit; color: inherit; }
 .spacer { flex: 1; }
 .clock { font-family: var(--mono); color: var(--dim); font-size: 13px; }
 .clock b { color: var(--text); font-weight: 600; }
+.ffwd {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  color: #000; background: var(--rise); border-radius: 5px; padding: 4px 10px;
+}
+.ff-icon { font-style: normal; font-size: 10px; animation: ffpulse 0.8s ease-in-out infinite; }
+@keyframes ffpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.ff-sub { font-weight: 500; font-size: 10px; letter-spacing: 0.04em; opacity: 0.72; }
+@media (max-width: 1500px) { .ff-sub { display: none; } }
+
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .seg button {
   background: transparent; border: 0; padding: 5px 12px; cursor: pointer; color: var(--dim);

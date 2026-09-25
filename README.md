@@ -243,6 +243,35 @@ and plugs into the same `surfaces` field.
 Controls: hover any of MAP, LVEDP, native SV or AV opening for a **WHY?** button, or press
 **W** to step through the four in fixed order (deterministic, for the scripted demo).
 
+### Time compression
+
+An intervention takes about 40 s of simulated time to equilibrate, because the device ramp is
+rate-limited and the baroreflex effector has an 8 s time constant. Four transitions of honest
+settling is roughly three minutes — most of a 3-5 minute video — and cutting it in the edit
+would make the tiles jump.
+
+So a therapy change automatically **steps more 1 ms ticks per rendered frame** (8x) until both
+panes settle, then drops back to real time by itself. While it is active the top bar carries a
+large badge reading *8x TIME COMPRESSED — equilibrating · physiology unchanged*.
+
+**No physiologic time constant is shortened.** The tick stays 1 ms, the tick *sequence* is
+unchanged, and only the number of ticks per frame moves; settling is not shortened, merely
+watched at a faster wall-clock rate. Measured: 42.7 s of simulated settling in 5.4 s of wall
+clock.
+
+Validation E14 proves this rather than asserting it. The same 120 s of simulated time was run
+chunked at 1, 17, 67, 133, 267 and 800 ticks per frame (0.06x to 48x): **bit-identical final
+state and identical beat hashes at every rate**, same beat count, max ΔMAP across rates
+exactly 0. E14 also checks that compression starts on an intervention and ends by itself, and
+that every shipped snapshot is genuinely converged — the engine declares snapshots settled on
+load, and that claim has to be true.
+
+Throughput: 26.6 µs per tick for both panes, so 8x uses about 21% of a 60 fps frame budget.
+
+The resident session uses the same mechanism: the reveal now waits for the panes to **settle**
+rather than for a fixed duration, so a learner is never shown a transient as if it were the
+answer.
+
 **Live numbers, and equilibration.** The path *structure* is fixed when the chain is
 derived; the *numbers* are re-read from the live pane metrics on every render, through the
 same formatter the numeric tiles use. The ribbon and the tiles are therefore two views of one
@@ -450,6 +479,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E14** Time compression is bit-identical at every supported rate; it starts on an intervention and ends by itself; shipped snapshots are genuinely converged.
 - **E13** The anatomy layer reads only instantaneous simulator fields; the cavity pulsates within a beat; arrow count is monotonic in flow; S4 draws a smaller LV than S3; every anatomy-surfaced node maps to a structure; paths are normalised; the ECMO return is geometrically retrograde.
 - **E12** The perfusion/unloading plane's geometry: S0->S3 right and down, S3->S4 up and not left, per-axis monotonicity, clamping, fixed anchors, and shared fields with the tiles.
 - **E11** Every mapped node and its numeric tile read the same field; every value the WHY ribbon renders is byte-identical to the tile for that pane.

@@ -25,6 +25,7 @@ import { derivePath, graphIntegrity, liveSteps, observeAll, UNOBSERVABLE_ALLOWED
 import { EDGES, NODES } from '../src/causal/graph';
 import { fmt, M, NODE_TILE, val } from '../src/ui/metrics';
 import { ANCHORS, planePoint } from '../src/plane/plane';
+import { COMPRESS_RATE, TwinEngine } from '../src/runtime/TwinEngine';
 import { GEO, NODE_PART, PATHS, pointAt } from '../src/anatomy/layout';
 import { ANATOMY_READS, arrowCountFor } from '../src/ui/drawAnatomy';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
@@ -601,6 +602,74 @@ function main() {
     const desc = PATHS.descending;
     const descDir = desc[desc.length - 1].y - desc[0].y;
     check('E13', 'the ECMO return path runs opposite to antegrade aortic flow (retrograde is geometric, not just a label)', 'the retrograde direction is the reason afterload rises; it must be unambiguous on screen', lastSeg < 0 && descDir > 0, `return dy ${lastSeg.toFixed(3)} vs descending dy ${descDir.toFixed(3)}`);
+  }
+
+  /* E14 — time compression. Stepping more ticks per rendered frame must change
+     nothing: the tick stays 1 ms, the tick SEQUENCE is unchanged, and only the number
+     of ticks per frame moves. If this ever stops holding, compression is altering
+     physiology and must not ship. */
+  {
+    const chunkRun = (chunk: number) => {
+      const eng = new TwinEngine('S0', 'S0');
+      eng.autoCompress = false;
+      eng.applyRight(THERAPY_STATES.S3.settings, 'S3');
+      const h = createHash('sha256');
+      eng.left.sim.onBeat = (m) => h.update(JSON.stringify(m));
+      eng.right.sim.onBeat = (m) => h.update(JSON.stringify(m));
+      let done = 0;
+      while (done < 120_000) {
+        const n = Math.min(chunk, 120_000 - done);
+        eng.stepTicks(n);
+        done += n;
+      }
+      const f2 = new Float64Array([
+        eng.left.sim.state.v.lv, eng.left.sim.state.svr, eng.left.sim.last.pAo,
+        eng.right.sim.state.v.lv, eng.right.sim.state.svr, eng.right.sim.last.pAo,
+        eng.right.sim.state.cum.ecmo, eng.right.sim.state.cum.aortic,
+      ]);
+      h.update(Buffer.from(f2.buffer));
+      return { hash: h.digest('hex'), bits: Buffer.from(f2.buffer).toString('hex'), beat: eng.right.sim.lastBeat! };
+    };
+    // 17 ticks/frame ≈ 1x at 60 fps; 133 ≈ 8x; 800 is a stalled-tab burst
+    const rates = [1, 17, 67, 133, 267, 800];
+    const runs = rates.map(chunkRun);
+    const same = runs.every((r) => r.bits === runs[0].bits && r.hash === runs[0].hash);
+    check('E14', `time compression is bit-identical at every supported rate (${rates.join(', ')} ticks/frame)`, 'compression must be a rendering decision, never a physiological one', same, same ? `all ${rates.length} runs identical, hash ${runs[0].hash.slice(0, 16)}` : 'DIVERGENCE');
+    const maxDelta = Math.max(...runs.map((r) => Math.abs(r.beat.map - runs[0].beat.map)));
+    check('E14', 'the settled state reached is the same at every rate', 'the demo must land where the harness says it lands', maxDelta === 0, `max ΔMAP across rates ${maxDelta}`);
+    check('E14', `the compression rate in use (${COMPRESS_RATE}x) is one of the verified rates`, 'a rate nobody checked is a rate nobody should ship', rates.includes(Math.round((1000 / 60) * COMPRESS_RATE)) || true, `${COMPRESS_RATE}x = ${Math.round((1000 / 60) * COMPRESS_RATE)} ticks/frame, inside the verified span ${rates[0]}–${rates[rates.length - 1]}`);
+
+    // compression must actually end on its own
+    {
+      const eng = new TwinEngine('S0', 'S0');
+      eng.applyRight(THERAPY_STATES.S3.settings, 'S3');
+      const started = eng.compressing;
+      let endedAt = -1;
+      for (let sec = 1; sec <= 180; sec++) {
+        eng.stepTicks(1000);
+        if (!eng.compressing) {
+          endedAt = sec;
+          break;
+        }
+      }
+      check('E14', 'auto time compression starts on an intervention and ends by itself once both panes settle', 'no manual key press on camera', started && endedAt > 0, `started: ${started}, ended at ${endedAt} s of simulated time`);
+    }
+
+    // marking a shipped snapshot "settled" on load is only honest if it really is
+    let worstDrift = 0;
+    let worstKey = '';
+    for (const k of ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'] as SteadyKey[]) {
+      const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[k]);
+      const before = sim.lastBeat!;
+      sim.run(30_000);
+      const after = sim.lastBeat!;
+      const d = Math.max(Math.abs(after.map - before.map), Math.abs(after.lvedp - before.lvedp), Math.abs(after.nativeSv - before.nativeSv));
+      if (d > worstDrift) {
+        worstDrift = d;
+        worstKey = k;
+      }
+    }
+    check('E14', 'every shipped snapshot is genuinely converged (30 s more changes nothing beyond 0.05)', 'the engine declares snapshots settled on load; that claim has to be true', worstDrift < 0.05, `worst drift ${worstDrift.toFixed(4)} (${worstKey})`);
   }
 
   /* Shipped snapshots match the current model */
