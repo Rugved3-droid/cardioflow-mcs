@@ -45,6 +45,13 @@ export interface AnatomyInput {
   vMin: number;
   vMax: number;
   highlight: AnatomyPart | null;
+  /**
+   * Twin summons the highlight briefly, so dimming everything else is the right
+   * emphasis. Solo shows the chain permanently, so dimming would leave most of the
+   * drawing muted all the time; there the highlight is additive (a ring only).
+   * Defaults to the twin behaviour, so no existing call site changes.
+   */
+  dimOthers?: boolean;
 }
 
 interface Ctx2 {
@@ -172,8 +179,9 @@ export function drawAnatomy(
     panel: CSSVAR('--panel'),
   };
   const hi = (p: AnatomyPart) => highlight === p;
+  const dimOthers = input.dimOthers ?? true;
   const emphasise = (p: AnatomyPart) => {
-    if (!highlight) return 1;
+    if (!highlight || !dimOthers) return 1;
     return hi(p) ? 1 : 0.28;
   };
 

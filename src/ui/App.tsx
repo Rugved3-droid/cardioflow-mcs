@@ -15,13 +15,17 @@ import { PlanePanel } from './PlanePanel';
 import { AnatomyBand } from './AnatomyBand';
 import { useDemo } from '../demo/useDemo';
 import { DEMO_SCRIPT } from '../demo/script';
+import { SoloView } from './SoloView';
 
 type Mode = 'explore' | 'assess';
+/** Solo is the default; twin is switched into with C. Both are views over one engine. */
+type View = 'solo' | 'twin';
 
 export function App() {
   const engine = useMemo(() => new TwinEngine('S0', STEADY_LABEL.S0), []);
   const { register, version } = useFrameLoop(engine);
   const [mode, setMode] = useState<Mode>('explore');
+  const [view, setView] = useState<View>('solo');
   const [active, setActive] = useState<TherapyId | null>('S0');
   const [planeBig, setPlaneBig] = useState(false);
   const [anatBig, setAnatBig] = useState(false);
@@ -50,8 +54,26 @@ export function App() {
   const goState = (id: TherapyId) => {
     stop();
     whyIdx.current = 0;
-    engine.fork(THERAPY_STATES[id].settings, THERAPY_STATES[id].name);
+    if (view === 'solo') {
+      // solo swaps the device in place: the patient on screen stays the patient
+      engine.applyRight(THERAPY_STATES[id].settings, THERAPY_STATES[id].name);
+    } else {
+      engine.fork(THERAPY_STATES[id].settings, THERAPY_STATES[id].name);
+    }
     setActive(id);
+  };
+
+  /** Solo -> twin keeps the current patient as B and brings the baseline in as A. */
+  const toggleView = () => {
+    if (demo.running) return;
+    stop();
+    setView((v) => {
+      if (v === 'solo') {
+        engine.compareWithBaseline();
+        return 'twin';
+      }
+      return 'solo';
+    });
   };
 
   const switchMode = (m: Mode) => {
@@ -60,6 +82,7 @@ export function App() {
     engine.load('S0', 'S0', STEADY_LABEL.S0, STEADY_LABEL.S0);
     setActive('S0');
     setMode(m);
+    if (m === 'explore') setView('solo');
   };
 
   useEffect(() => {
@@ -82,6 +105,7 @@ export function App() {
         if (demo.running) demo.stop();
         else {
           setMode('explore');
+          setView('twin'); // the demo's narrative is a comparison; it runs in twin
           demo.start();
         }
         return;
@@ -91,6 +115,10 @@ export function App() {
         return;
       }
       if (demo.running) return; // the script owns the keyboard while it runs
+      if (e.key === 'c' || e.key === 'C') {
+        toggleView();
+        return;
+      }
       if (e.key === 'a' || e.key === 'A') {
         setAnatBig((v) => !v);
         return;
@@ -175,6 +203,12 @@ export function App() {
             <span className="ff-sub">esc to stop</span>
           </div>
         )}
+        {!demo.running && mode === 'explore' && (
+          <div className="seg" role="tablist">
+            <button className={view === 'solo' ? 'on' : ''} onClick={() => view !== 'solo' && toggleView()}>Solo</button>
+            <button className={view === 'twin' ? 'on' : ''} onClick={() => view !== 'twin' && toggleView()}>Compare</button>
+          </div>
+        )}
         {!demo.running && (
           <div className="seg" role="tablist">
             <button className={mode === 'explore' ? 'on' : ''} onClick={() => switchMode('explore')}>Explore</button>
@@ -182,20 +216,27 @@ export function App() {
           </div>
         )}
       </header>
-      <main className="stage">
-        <Pane side="left" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} />
-        <div className="midcol">
-          <Deltas engine={engine} version={version} />
-          <PlanePanel engine={engine} register={register} version={version} />
-        </div>
-        <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
-      </main>
-      <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} />
+      {view === 'solo' && mode === 'explore' ? (
+        <SoloView engine={engine} register={register} version={version} />
+      ) : (
+        <>
+          <main className="stage">
+            <Pane side="left" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} />
+            <div className="midcol">
+              <Deltas engine={engine} version={version} />
+              <PlanePanel engine={engine} register={register} version={version} />
+            </div>
+            <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
+          </main>
+          <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} />
+        </>
+      )}
       {help && (
         <div className="plane-overlay" onClick={() => setHelp(false)} role="dialog" aria-label="Keyboard shortcuts">
           <div className="helpbox" onClick={(e) => e.stopPropagation()}>
             <h2>Keys</h2>
             <dl>
+              <dt>C</dt><dd>Switch between solo and compare. Solo → compare keeps the patient you are watching as B and brings the untreated baseline in as A.</dd>
               <dt>1 – 6</dt><dd>Select S0–S5. Pane B takes the new therapy; pane A continues the previous one.</dd>
               <dt>W</dt><dd>Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening.</dd>
               <dt>P</dt><dd>Perfusion / unloading plane, full screen.</dd>

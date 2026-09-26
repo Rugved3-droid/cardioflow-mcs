@@ -12,7 +12,7 @@ import { SHOCK_PATIENT } from '../model/patient';
 import type { BeatMetrics, DeviceSettings } from '../model/types';
 import steadyStates from '../model/steadyStates.json';
 import type { SteadyKey } from '../model/steadyStates';
-import { PvBuffer, TraceBuffer } from './buffers';
+import { PvBuffer, SWEEP_MS, TraceBuffer } from './buffers';
 
 const SNAPSHOTS = steadyStates as unknown as Record<SteadyKey, SimSnapshot>;
 
@@ -196,6 +196,40 @@ export class TwinEngine {
     this.right.markUnsettled();
     if (this.autoCompress) this.speed = COMPRESS_RATE;
     this.ticksSinceIntervention = 0;
+  }
+
+  /**
+   * Solo -> twin. Keeps the pane the learner is already watching as B, untouched and
+   * still running, and brings the untreated baseline in beside it as A.
+   *
+   * The new A is phase-aligned before it appears: it is stepped forward from the
+   * shipped S0 snapshot so that it finishes at exactly B's tick and B's point in the
+   * cardiac cycle, recording as it goes. Its waveform is therefore already full and
+   * already beat-locked the moment it becomes visible, so the split reads as a second
+   * reality arriving rather than as a reset.
+   *
+   * Additive: nothing else calls this and no existing path changes.
+   */
+  compareWithBaseline(baselineKey: SteadyKey = 'S0', baselineLabel = 'Cardiogenic shock — no support'): void {
+    const b = this.right;
+    const cycle = b.sim.cycleMs;
+    const fill = cycle * Math.ceil(SWEEP_MS / cycle) + b.sim.state.tickInBeat;
+
+    const sim = Sim.fromSnapshot(SHOCK_PATIENT, SNAPSHOTS[baselineKey]);
+    sim.state.tick = b.sim.state.tick - fill;
+    sim.state.beat = b.sim.state.beat - Math.floor(fill / cycle);
+
+    const a = new PaneRuntime(sim, baselineLabel);
+    a.beats = [];
+    for (let i = 0; i < fill; i++) {
+      const beforeBeat = sim.state.beat;
+      sim.tick();
+      a.record();
+      if (sim.state.beat !== beforeBeat && sim.lastBeat) a.noteBeat(sim.lastBeat);
+    }
+    a.markSettled(); // the baseline snapshot is converged by construction (E14)
+    this.left = a;
+    this.emit({ type: 'fork' });
   }
 
   /** Called once per animation frame with elapsed wall time. */

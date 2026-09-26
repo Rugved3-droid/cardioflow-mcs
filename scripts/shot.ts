@@ -139,6 +139,20 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     }
     console.log('captions seen: ' + seen.length);
     console.log('WHY-while-equilibrating violations:', violations);
+  } else if (scenario === 'solo') {
+    await shot('0-s0');
+    await page.keyboard.press('4');
+    await sleep(9000);
+    await shot('1-s3');
+    await page.keyboard.press('5');
+    await sleep(9000);
+    await shot('2-s4');
+    await page.keyboard.press('2');
+    await sleep(9000);
+    await shot('3-iabp');
+    await page.keyboard.press('c');
+    await sleep(2500);
+    await shot('4-compare');
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

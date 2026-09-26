@@ -31,6 +31,7 @@ import { DEMO_SCRIPT } from '../src/demo/script';
 import { derivePath as derivePathForDemo } from '../src/causal/derive';
 import { GEO, NODE_PART, PATHS, pointAt } from '../src/anatomy/layout';
 import { ANATOMY_READS, arrowCountFor } from '../src/ui/drawAnatomy';
+import { SOLO_READS } from '../src/ui/SoloView';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
 
@@ -718,6 +719,40 @@ function main() {
     check('E15', 'the script never starts an intervention while a causal chain is still displayed', 'a chain left up across a transition would be narrating the previous one', !a.violated && !c.violated, a.violated || c.violated ? 'VIOLATED' : 'chain explicitly dismissed before every subsequent intervention');
   }
 
+  /* E16 — solo mode. It is a second VIEW over the same engine, never a second source
+     of truth, and the handoff into twin must not lose the patient being watched. */
+  {
+    // solo must read the same fields twin does, through the same tile definitions
+    const soloErrors: string[] = [];
+    for (const [nodeId, tile] of Object.entries(SOLO_READS)) {
+      const twinTile = NODE_TILE[nodeId];
+      if (!twinTile) { soloErrors.push(`${nodeId}: solo shows a tile twin does not map`); continue; }
+      if (twinTile.key !== tile.key) soloErrors.push(`${nodeId}: solo reads ${String(tile.key)}, twin reads ${String(twinTile.key)}`);
+      if (twinTile.digits !== tile.digits) soloErrors.push(`${nodeId}: precision differs`);
+    }
+    check('E16', 'every solo tile reads the same BeatMetrics field, at the same precision, as its twin tile', 'solo is a view over one engine, not a second set of numbers', soloErrors.length === 0, soloErrors.join('; ') || `${Object.keys(SOLO_READS).length} tiles agree with twin`);
+
+    // solo's chain uses the same derivation against the shipped untreated baseline
+    const baseline = fresh.S0.lastBeat!;
+    const current = fresh.S3.lastBeat!;
+    const soloPath = derivePath('lvedp', baseline, current);
+    check('E16', "solo's causal chain derives from the same graph, against the untreated baseline", 'same derivation as twin, different reference', !!soloPath && soloPath.steps.length >= 2, soloPath ? soloPath.steps.map((st) => st.node.short).join(' → ') : 'NO PATH');
+
+    // solo -> twin must preserve the state the learner is watching
+    const eng = new TwinEngine('S0', 'S0');
+    eng.applyRight(THERAPY_STATES.S3.settings, 'S3');
+    eng.stepTicks(90_000);
+    const beforeSwitch = { ...eng.right.metrics! };
+    const rightSimBefore = eng.right.sim;
+    const tickBefore = eng.right.sim.state.tick;
+    eng.compareWithBaseline();
+    const afterSwitch = eng.right.metrics!;
+    check('E16', 'solo→twin keeps the watched patient as pane B, untouched', 'the comparison must start from where the learner already is', eng.right.sim === rightSimBefore && afterSwitch.map === beforeSwitch.map && afterSwitch.lvedp === beforeSwitch.lvedp, `MAP ${fx(beforeSwitch.map, 1)}→${fx(afterSwitch.map, 1)}, same Sim object: ${eng.right.sim === rightSimBefore}`);
+    check('E16', 'the baseline arrives as pane A already beat-locked to pane B', 'a second reality appearing, not a reset: the shared cardiac clock is the premise', eng.left.sim.state.tickInBeat === eng.right.sim.state.tickInBeat && eng.left.sim.state.tick === tickBefore, `A tickInBeat ${eng.left.sim.state.tickInBeat} vs B ${eng.right.sim.state.tickInBeat}; A tick ${eng.left.sim.state.tick} vs B ${eng.right.sim.state.tick}`);
+    check('E16', 'pane A arrives with a full waveform rather than an empty sweep', 'the split must not read as a blank pane filling in', eng.left.trace.stamp.filter((x) => x >= 0).length === eng.left.trace.stamp.length, `${eng.left.trace.stamp.filter((x) => x >= 0).length}/${eng.left.trace.stamp.length} trace slots populated`);
+    cmp('E16', 'pane A is the untreated baseline, not a copy of B', eng.left.metrics!.lvedp, '<', eng.right.metrics!.lvedp, 'A must be the reference the chain was explaining against');
+  }
+
   /* Shipped snapshots match the current model */
   check(
     'DET',
@@ -793,18 +828,26 @@ function writeOutputs(wallMs: number) {
     ['impellaLpm', 'Imp', 2], ['ecmoLpm', 'ECMO', 2], ['totalFlowLpm', 'Total', 2], ['avOpenFraction', 'AVopen', 3],
     ['strokeWork', 'SW', 0], ['pva', 'PVA', 0], ['dpti', 'DPTI', 2], ['lapMean', 'LAP', 1], ['rapMean', 'RAP', 1], ['svrWood', 'SVR_WU', 1],
   ];
-  const exps = [...new Set(rows.map((r) => r.exp))];
+  // Every experiment that produced a check must appear, including those that record no
+  // data rows (E9 onward). Listing only row-producing experiments silently dropped 58
+  // checks from the document while the console still reported them.
+  const rowExps = [...new Set(rows.map((r) => r.exp))];
+  const checkExps = [...new Set(checks.map((c) => c.exp))].filter((e) => e !== 'DET' && e !== 'INV');
+  const exps = [...rowExps, ...checkExps.filter((e) => !rowExps.includes(e))];
   md.push('Units: pressures mmHg, volumes mL, flows L/min, SW/PVA mmHg·mL, DPTI mmHg·s per beat, AVopen = fraction of cycle the aortic valve is open (EMA-smoothed).');
   md.push('');
   for (const e of exps) {
     md.push(`## ${e}`);
     md.push('');
-    md.push(`| step | ${tableKeys.map((k) => k[1]).join(' | ')} |`);
-    md.push(`|---|${tableKeys.map(() => '---:').join('|')}|`);
-    for (const r of rows.filter((x) => x.exp === e)) {
-      md.push(`| ${r.step} | ${tableKeys.map(([k, , d]) => fx(r.m[k] as number, d)).join(' | ')} |`);
+    const mine = rows.filter((x) => x.exp === e);
+    if (mine.length) {
+      md.push(`| step | ${tableKeys.map((k) => k[1]).join(' | ')} |`);
+      md.push(`|---|${tableKeys.map(() => '---:').join('|')}|`);
+      for (const r of mine) {
+        md.push(`| ${r.step} | ${tableKeys.map(([k, , d]) => fx(r.m[k] as number, d)).join(' | ')} |`);
+      }
+      md.push('');
     }
-    md.push('');
     const cs = checks.filter((c) => c.exp === e);
     if (cs.length) {
       for (const c of cs) {
