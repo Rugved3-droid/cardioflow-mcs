@@ -34,7 +34,7 @@ export const GEO = {
   lv: { x: 0.265, y: 0.560, rxMin: 0.058, rxMax: 0.118, ryMin: 0.090, ryMax: 0.170 },
   mitral: { x: 0.265, y: 0.300, w: 0.050 },
   /** aortic valve sits at the top of the LV outflow tract */
-  av: { x: 0.408, y: 0.298, w: 0.044, angle: -0.70 },
+  av: { x: 0.421, y: 0.286, w: 0.060, angle: -0.70 },
   /** LV outflow tract: a tapering neck from the LV cavity up to the aortic valve */
   lvot: { from: { x: 0.318, y: 0.432 }, to: { x: 0.400, y: 0.310 }, w: 0.052 },
   venous: { x: 0.072, y: 0.315, w: 0.082, h: 0.255 },

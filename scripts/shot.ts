@@ -153,6 +153,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await page.keyboard.press('c');
     await sleep(2500);
     await shot('4-compare');
+  } else if (scenario === 'valve') {
+    await sleep(1500);
+    for (let i = 0; i < 9; i++) { await shot('s0-' + i); await sleep(85); }
+    await page.keyboard.press('5');
+    await sleep(40000);
+    for (let i = 0; i < 9; i++) { await shot('s4-' + i); await sleep(85); }
   } else if (scenario === 'assess') {
     await clickText('Resident session'); await sleep(500);
     await clickText('Start session'); await sleep(1500); await shot('0-question');

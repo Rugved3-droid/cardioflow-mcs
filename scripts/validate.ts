@@ -30,7 +30,7 @@ import { DemoRunner, traceSignature } from '../src/demo/runner';
 import { DEMO_SCRIPT } from '../src/demo/script';
 import { derivePath as derivePathForDemo } from '../src/causal/derive';
 import { GEO, NODE_PART, PATHS, pointAt } from '../src/anatomy/layout';
-import { ANATOMY_READS, arrowCountFor } from '../src/ui/drawAnatomy';
+import { ANATOMY_READS, arrowCountFor, valveOpenFraction, ventricleGeometry } from '../src/ui/drawAnatomy';
 import { SOLO_READS } from '../src/ui/SoloView';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
@@ -751,6 +751,54 @@ function main() {
     check('E16', 'the baseline arrives as pane A already beat-locked to pane B', 'a second reality appearing, not a reset: the shared cardiac clock is the premise', eng.left.sim.state.tickInBeat === eng.right.sim.state.tickInBeat && eng.left.sim.state.tick === tickBefore, `A tickInBeat ${eng.left.sim.state.tickInBeat} vs B ${eng.right.sim.state.tickInBeat}; A tick ${eng.left.sim.state.tick} vs B ${eng.right.sim.state.tick}`);
     check('E16', 'pane A arrives with a full waveform rather than an empty sweep', 'the split must not read as a blank pane filling in', eng.left.trace.stamp.filter((x) => x >= 0).length === eng.left.trace.stamp.length, `${eng.left.trace.stamp.filter((x) => x >= 0).length}/${eng.left.trace.stamp.length} trace slots populated`);
     cmp('E16', 'pane A is the untreated baseline, not a copy of B', eng.left.metrics!.lvedp, '<', eng.right.metrics!.lvedp, 'A must be the reference the chain was explaining against');
+  }
+
+  /* E17 — aortic valve and ventricular wall. Both are drawn quantities, so both are
+     asserted against the model rather than eyeballed. */
+  {
+    const qs = [0, 1, 5, 20, 60, 120, 200, 300, 380, 500, 900];
+    const opens = qs.map(valveOpenFraction);
+    const mono = opens.every((o, i) => i === 0 || o >= opens[i - 1]);
+    check('E17', 'valve opening is monotonic non-decreasing in transvalvular flow, and zero at zero flow', 'the leaflets must be a faithful function of the flow crossing them', mono && opens[0] === 0 && opens[opens.length - 1] === 1, qs.map((q, i) => `${q}→${opens[i].toFixed(2)}`).join(' '));
+
+    // the fraction of the cycle the leaflets are open must match the reported metric
+    const drift: string[] = [];
+    let worst = 0;
+    for (const k of ['S0', 'S3', 'S4'] as SteadyKey[]) {
+      const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[k]);
+      let openTicks = 0;
+      let peak = 0;
+      for (let i = 0; i < sim.cycleMs; i++) {
+        const o = valveOpenFraction(sim.last.qAortic);
+        if (o > 0.02) openTicks++;
+        peak = Math.max(peak, o);
+        sim.tick();
+      }
+      const drawn = openTicks / sim.cycleMs;
+      const metric = fresh[k].lastBeat!.avOpenFraction;
+      worst = Math.max(worst, Math.abs(drawn - metric));
+      drift.push(`${k} drawn ${(100 * drawn).toFixed(0)}% vs metric ${(100 * metric).toFixed(0)}% (peak ${peak.toFixed(2)})`);
+    }
+    check('E17', 'the fraction of the cycle the leaflets are drawn open matches the reported AV-open metric (within 3 points)', 'the picture and the number must be the same claim', worst < 0.03, drift.join('; '));
+
+    // reduced excursion under support, which is the visual signature being taught
+    const peakAt = (k: SteadyKey) => {
+      const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[k]);
+      let p = 0;
+      for (let i = 0; i < sim.cycleMs; i++) {
+        p = Math.max(p, valveOpenFraction(sim.last.qAortic));
+        sim.tick();
+      }
+      return p;
+    };
+    cmp('E17', 'the valve opens less far at S4 than untreated (reduced excursion is visible, not just rarer)', peakAt('S4'), '<', peakAt('S0') * 0.8, 'at P5 the leaflets only crack; that partial opening is why P5 was chosen over P8');
+
+    // wall thickening: the geometric claim behind the contraction
+    const full = ventricleGeometry(210, 240);
+    const empty = ventricleGeometry(120, 240);
+    cmp('E17', 'the ventricular wall is thicker when the cavity is emptier', empty.wall, '>', full.wall, 'cavity and epicardium both scale as cube roots of their volumes, so constant muscle thickens as the cavity shrinks', true, 4);
+    cmp('E17', 'the cavity is smaller when it holds less blood', empty.endoW, '<', full.endoW, 'cavity tracks volume', true, 4);
+    check('E17', 'the epicardium changes far less than the cavity (the wall absorbs the difference)', 'a ventricle whose outline shrank as much as its cavity would read as deflating, not contracting', Math.abs(empty.epiW - full.epiW) < Math.abs(empty.endoW - full.endoW) * 0.6, `epi Δ ${Math.abs(empty.epiW - full.epiW).toFixed(4)} vs cavity Δ ${Math.abs(empty.endoW - full.endoW).toFixed(4)}`);
   }
 
   /* Shipped snapshots match the current model */

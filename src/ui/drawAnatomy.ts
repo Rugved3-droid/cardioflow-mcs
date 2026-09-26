@@ -21,11 +21,54 @@ export const ANATOMY_READS = {
   lvChamberSize: 'vLv',
   aorticValveLeaflets: 'qAortic',
   balloonSize: 'vBalloon',
+  lvWallThickness: 'vLv',
   impellaArrows: 'qImpella',
   ecmoArrows: 'qEcmo',
   mitralArrows: 'qMitral',
   systemicArrows: 'qSvr',
 } as const;
+
+/**
+ * Aortic valve opening, 0 (leaflets coapted) to 1 (fully swung back).
+ *
+ * Driven by instantaneous transvalvular flow — the same quantity the AV-open metric
+ * integrates. The fractional exponent means a small ejection still visibly cracks the
+ * valve, which is what makes the intermittent opening at S4/P5 read as intermittency
+ * rather than as a valve that never moves. Monotonic non-decreasing in q (E17).
+ */
+export const VALVE_Q_REF = 380;
+export function valveOpenFraction(qAortic: number): number {
+  if (qAortic <= 0) return 0;
+  return Math.min(1, Math.pow(qAortic / VALVE_Q_REF, 0.55));
+}
+
+/**
+ * Myocardial volume, mL. Constant — which is why the wall thickens as the cavity empties.
+ *
+ * Set from LV mass in dilated cardiomyopathy (roughly 250-400 g, so ~240-380 mL of
+ * muscle at ~1.05 g/mL). The first value tried here was far too small, which made the
+ * epicardial outline move almost as much as the cavity: the ventricle read as
+ * deflating rather than contracting. E17 asserts the separation.
+ */
+export const MYOCARDIAL_ML = 300;
+
+/**
+ * Cavity and epicardial half-dimensions for a cavity volume.
+ *
+ * Both scale as the cube root of a volume: the cavity as V, the epicardium as
+ * V + MYOCARDIAL_ML. Wall thickness is their difference, so it thickens as the cavity
+ * empties without being animated separately — the muscle has nowhere else to go.
+ * Exported so E17 can assert the thickening instead of trusting the drawing.
+ */
+export function ventricleGeometry(vLv: number, vMax: number) {
+  const kEndo = Math.cbrt(Math.max(vLv, 1) / Math.max(vMax, 1));
+  const kEpi = Math.cbrt((Math.max(vLv, 1) + MYOCARDIAL_ML) / (Math.max(vMax, 1) + MYOCARDIAL_ML));
+  const endoW = GEO.lv.rxMax * kEndo;
+  const endoH = GEO.lv.ryMax * kEndo;
+  const epiW = GEO.lv.rxMax * kEpi * 1.16;
+  const epiH = GEO.lv.ryMax * kEpi * 1.13;
+  return { endoW, endoH, epiW, epiH, wall: epiW - endoW };
+}
 
 /** Arrow count for a given flow. Exported so its monotonicity can be asserted. */
 export function arrowCountFor(flowMlS: number): number {
@@ -128,6 +171,74 @@ function flowArrows(
     c.closePath();
     c.fill();
     c.restore();
+  }
+}
+
+/**
+ * Left-ventricular silhouette: a domed base at the valve plane, rounded shoulders,
+ * walls bulging outward, tapering to an apex below. Schematic, but it is the shape a
+ * clinician reads as a ventricle rather than as a circle.
+ */
+function lvPath(g: Ctx2, cx: number, cy: number, halfW: number, halfH: number) {
+  const { c } = g;
+  const bw = halfW * 0.70;
+  c.beginPath();
+  c.moveTo(g.X(cx - bw), g.Y(cy - halfH));
+  c.quadraticCurveTo(g.X(cx), g.Y(cy - halfH * 1.10), g.X(cx + bw), g.Y(cy - halfH));
+  c.quadraticCurveTo(g.X(cx + halfW * 0.99), g.Y(cy - halfH * 0.97), g.X(cx + halfW * 1.02), g.Y(cy - halfH * 0.72));
+  c.bezierCurveTo(
+    g.X(cx + halfW * 1.08), g.Y(cy + halfH * 0.16),
+    g.X(cx + halfW * 0.74), g.Y(cy + halfH * 0.70),
+    g.X(cx), g.Y(cy + halfH),
+  );
+  c.bezierCurveTo(
+    g.X(cx - halfW * 0.74), g.Y(cy + halfH * 0.70),
+    g.X(cx - halfW * 1.08), g.Y(cy + halfH * 0.16),
+    g.X(cx - halfW * 1.02), g.Y(cy - halfH * 0.72),
+  );
+  c.quadraticCurveTo(g.X(cx - halfW * 0.99), g.Y(cy - halfH * 0.97), g.X(cx - bw), g.Y(cy - halfH));
+  c.closePath();
+}
+
+/**
+ * Semilunar leaflets in profile, hinged at the vessel wall.
+ *
+ * Closed, the free edges meet in midstream and occlude it. Open, they swing back
+ * against the wall. `flutter` displaces the free edge and its phase comes from the
+ * cumulative volume that has crossed the valve, so the leaflets shimmer in proportion
+ * to the flow actually passing them rather than on a timer of their own.
+ */
+function drawLeaflets(
+  g: Ctx2,
+  halfW: number,
+  leafLen: number,
+  open: number,
+  flutter: number,
+  colOpen: string,
+  colShut: string,
+) {
+  const { c } = g;
+  const isOpen = open > 0.02;
+  for (const sign of [-1, 1]) {
+    const hinge = sign * halfW;
+    const tipY = sign * halfW * (0.10 + 0.86 * open);
+    const tipX = leafLen * (0.94 - 0.20 * open);
+    const bellyX = leafLen * 0.34;
+    const bellyY = hinge * (0.52 + 0.42 * open) + flutter * sign * 0.45;
+    c.beginPath();
+    c.moveTo(0, hinge);
+    c.quadraticCurveTo(bellyX, bellyY, tipX, tipY + flutter * sign);
+    c.quadraticCurveTo(bellyX * 0.80, bellyY * 0.55, 0, hinge * 0.66);
+    c.closePath();
+    c.save();
+    c.globalAlpha = c.globalAlpha * (isOpen ? 0.60 : 0.44);
+    c.fillStyle = isOpen ? colOpen : colShut;
+    c.fill();
+    c.restore();
+    c.strokeStyle = isOpen ? colOpen : colShut;
+    c.lineWidth = g.S(0.0075);
+    c.lineJoin = 'round';
+    c.stroke();
   }
 }
 
@@ -270,27 +381,43 @@ export function drawAnatomy(
     if (hi('la')) ring(a.x, a.y, a.rx + 0.018, a.ry + 0.018);
   }
 
-  /* ---------------- left ventricle: size tracks cavity volume live ---------------- */
+  /* ---------------- left ventricle: cavity AND wall track volume live ---------------- */
   const vFrac = vFracPre;
-  const lvRx = lerp(GEO.lv.rxMin, GEO.lv.rxMax, vFrac);
-  const lvRy = lvRyPre;
+  const { endoW, endoH, epiW, epiH } = ventricleGeometry(s.vLv, input.vMax);
   {
     ctx.save();
     ctx.globalAlpha = emphasise('lv');
-    ctx.fillStyle = COL.panel;
-    ctx.strokeStyle = COL.blood;
-    ctx.lineWidth = g.S(0.010);
-    ctx.beginPath();
-    ctx.ellipse(g.X(GEO.lv.x), g.Y(GEO.lv.y), g.S(lvRx), g.S(lvRy), 0, 0, Math.PI * 2);
+    lvPath(g, GEO.lv.x, GEO.lv.y, epiW, epiH);
+    ctx.fillStyle = '#20313f';
     ctx.fill();
+    ctx.globalAlpha = emphasise('lv') * 0.55;
+    ctx.strokeStyle = COL.blood;
+    ctx.lineWidth = g.S(0.007);
     ctx.stroke();
-    // cavity fill opacity tracks how full it is, so systole reads as emptying
-    ctx.globalAlpha = emphasise('lv') * (0.12 + 0.30 * vFrac);
+    ctx.globalAlpha = emphasise('lv');
+    lvPath(g, GEO.lv.x, GEO.lv.y + (epiH - endoH) * 0.30, endoW, endoH);
+    ctx.fillStyle = COL.panel;
+    ctx.fill();
+    ctx.globalAlpha = emphasise('lv') * (0.20 + 0.42 * vFrac);
     ctx.fillStyle = COL.blood;
     ctx.fill();
+    ctx.globalAlpha = emphasise('lv');
+    ctx.strokeStyle = COL.blood;
+    ctx.lineWidth = g.S(0.006);
+    ctx.stroke();
     ctx.restore();
-    label(g, 'LV', GEO.lv.x, GEO.lv.y + lvRy * 0.42, COL.blood);
-    if (hi('lv')) ring(GEO.lv.x, GEO.lv.y, lvRx + 0.022, lvRy + 0.022);
+    label(g, 'LV', GEO.lv.x, GEO.lv.y + epiH * 0.50, COL.blood);
+    if (hi('lv')) {
+      // trace the wall rather than ringing it; a big ellipse round the ventricle reads
+      // as an artefact, especially in solo where the highlight is permanent
+      ctx.save();
+      ctx.strokeStyle = COL.focus;
+      ctx.lineWidth = g.S(0.008);
+      ctx.globalAlpha = 0.9;
+      lvPath(g, GEO.lv.x, GEO.lv.y, epiW * 1.03, epiH * 1.03);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   /* ---------------- mitral inflow ---------------- */
@@ -298,31 +425,39 @@ export function drawAnatomy(
   flowArrows(g, PATHS.mitral, st.cum.mitral, s.qMitral, COL.la, false, 0.8);
   ctx.globalAlpha = 1;
 
-  /* ---------------- aortic valve leaflets ---------------- */
+  /* ---------------- aortic valve ----------------
+   * The physical signature of the afterload problem: when ECMO raises the pressure the
+   * ventricle must clear, these leaflets stop opening. Everything here comes from the
+   * instantaneous transvalvular flow and the volume that has crossed them.            */
   {
     const a = GEO.av;
-    // leaflet opening is driven by instantaneous transvalvular flow — the same
-    // quantity the AV-open metric integrates
-    const open = clamp01(s.qAortic / 260);
+    const open = valveOpenFraction(s.qAortic);
+    const flut = Math.sin(st.cum.aortic * 0.55) * g.S(0.010) * open;
     ctx.save();
     ctx.globalAlpha = emphasise('av');
     ctx.translate(g.X(a.x), g.Y(a.y));
     ctx.rotate(a.angle);
     const halfW = g.S(a.w);
-    const leafLen = g.S(0.042);
-    ctx.strokeStyle = s.avOpen ? COL.blood : COL.dim;
-    ctx.lineWidth = g.S(0.011);
-    ctx.lineCap = 'round';
-    for (const sign of [-1, 1]) {
-      const spread = lerp(0.12, 1.0, open);
-      ctx.beginPath();
-      ctx.moveTo(0, sign * halfW);
-      ctx.lineTo(leafLen * 0.85, sign * halfW * spread + sign * leafLen * 0.55 * spread);
-      ctx.stroke();
-    }
+    // sinus of Valsalva: somewhere for the leaflets to swing into
+    ctx.beginPath();
+    ctx.ellipse(g.S(0.036), 0, g.S(0.056), halfW * 1.30, 0, 0, Math.PI * 2);
+    ctx.globalAlpha = emphasise('av') * 0.85;
+    ctx.fillStyle = COL.panel;
+    ctx.fill();
+    ctx.globalAlpha = emphasise('av');
+    drawLeaflets(g, halfW, g.S(0.078), open, flut, COL.blood, COL.dim);
+    ctx.globalAlpha = emphasise('av') * 0.7;
+    ctx.strokeStyle = COL.dim;
+    ctx.lineWidth = g.S(0.005);
+    ctx.beginPath();
+    ctx.moveTo(0, -halfW * 1.14);
+    ctx.lineTo(0, -halfW * 0.84);
+    ctx.moveTo(0, halfW * 0.84);
+    ctx.lineTo(0, halfW * 1.14);
+    ctx.stroke();
     ctx.restore();
-    if (hi('av')) ring(a.x + 0.02, a.y - 0.012, 0.055, 0.055);
-    label(g, 'AV', a.x + 0.052, a.y + 0.052, s.avOpen ? COL.blood : COL.dim);
+    if (hi('av')) ring(a.x + 0.024, a.y - 0.016, 0.068, 0.068);
+    label(g, 'AV', a.x + 0.072, a.y + 0.066, s.avOpen ? COL.blood : COL.dim);
   }
 
   /* ---------------- native ejection + antegrade aortic flow ---------------- */
