@@ -66,6 +66,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await page.keyboard.press('i');
     await sleep(14000);
     await burst('3-s4-p5', 8, 90);
+    // the P5 valve is open ~71 ms per beat: one full beat at 1/8 to catch it from below
+    await page.keyboard.press('s');
+    await sleep(1500);
+    for (let i = 0; i < 40; i++) await shot(`4-slow-s4-p5-${String(i).padStart(2, '0')}`);
+    await page.keyboard.press('s');
   }
   if (errors.length) console.log('CONSOLE:\n' + errors.join('\n'));
   await browser.close();

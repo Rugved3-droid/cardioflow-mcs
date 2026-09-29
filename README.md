@@ -161,7 +161,7 @@ antegrade aortic flow rather than merely being labelled retrograde.
 
 ### Endovascular interior views
 
-Press **I** in Explore for a view from inside the vessel, for pane B (the pane solo shows).
+Press **I** in Explore for a view from inside the vessel (IABP or Impella; there is no VA-ECMO interior view), for pane B (the pane solo shows).
 It is never part of a default view, does nothing in a resident session, and closes during
 the demo. The code is in `src/endo/`; nothing existing was changed to draw it.
 
@@ -207,6 +207,37 @@ inside (≥ 12 px at 1080p); and each mistiming shows its own signature — earl
 as an overlap at the *end* of ejection, late deflation at the *start*, late inflation as
 a late-filling balloon after closure, early deflation as an empty balloon long before
 opening.
+
+**Impella, from inside the left ventricle.** A long-axis cut-away with the viewer in the
+cavity: the pump crosses the aortic valve, inlet down in the chamber, outlet up in the
+ascending aorta. Beside it, the same valve seen from below with the cannula through it,
+over a one-cycle sweep of valve opening, pump flow and LV volume.
+
+| drawn | driven by |
+|---|---|
+| endocardial wall | `vLv`, as distance from the viewer: cbrt(V) − cbrt(60 mL) |
+| wall thickness | `vLv` with constant muscle volume (as E17) |
+| inlet → cannula → outlet arrows | `qImpella`, one position from `state.cum.impella` along the whole path |
+| native ejection, mitral inflow | `qAortic` / `qMitral`, positions from `state.cum` |
+| leaflets, side-on and from below | `qAortic` |
+| dashed outline | end-diastolic wall position of the reference loop captured at the last therapy change |
+
+The camera volume (60 mL, fixed) is what makes unloading read as the walls closing in
+around the viewer: walls are drawn at their distance from someone sitting in the middle
+of the cavity, not from an empty centre. It is monotonic in volume and the same in every
+state. At 1080p, S0 → S2 brings the end-diastolic walls in by 81 px, S3 → S4 by 29 px.
+
+At **P5 (S4) the valve opens from below on every beat, but only for ~71 ms and to 44% of
+full excursion** (136 ms and 72% at S3). "Intermittent" here means brief opening each
+beat, not skipped beats. At P8 (S2, S5) it never opens, so the two levels look different
+from below.
+
+E18 adds, for the Impella: fields are real; inlet flow monotonic in `qImpella`, zero at
+zero; wall distance strictly monotonic in `vLv` with the wall thickening as it empties;
+the closing-in is at least 60 px (S0 → S2) and 15 px (S3 → S4) at 1080p; the drawn
+from-below opening matches the AV-open tile within 3 points; P5 opens every beat, more
+briefly and less far than S3, and P8 never; frames never touch the sim and pumped volume
+moves the arrows.
 
 ### Perfusion / unloading plane
 
@@ -327,7 +358,7 @@ Measured: 15 steps, 145 s of simulated time, about 60 s of wall clock.
 | **W** | Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening. |
 | **P** | Perfusion / unloading plane, full screen. |
 | **A** | Device / anatomy schematic, full screen. |
-| **I** | Inside the vessel: the IABP from inside the aorta, for pane B. **S** toggles 1/8 slow motion while it is open. |
+| **I** | Inside the vessel: the IABP from inside the aorta, or the Impella from inside the LV, for pane B. **S** toggles 1/8 slow motion while it is open. |
 | **D** | Run the scripted demo. |
 | **Space** | Pause / resume. |
 | **Esc** | Stop the demo, or close an overlay. |
@@ -569,7 +600,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
-- **E18** The interior views read only simulator state; balloon, wall and coronary inflow are monotonic in their fields; the coronary drive is the DPTI integrand; each IABP mistiming is visibly and distinctively different from inside; slow motion is bit-identical to real time.
+- **E18** The interior views read only simulator state; balloon, wall and coronary inflow are monotonic in their fields; the coronary drive is the DPTI integrand; each IABP mistiming is visibly and distinctively different from inside; the LV walls close in visibly with unloading and the valve seen from below opens exactly as often as the AV-open tile says; slow motion is bit-identical to real time.
 - **E15** The scripted demo produces an identical trace on every run and at every rate, finishes by itself, fires each WHY only once both panes have settled, and never starts an intervention with a chain still on screen.
 - **E14** Time compression is bit-identical at every supported rate; it starts on an intervention and ends by itself; shipped snapshots are genuinely converged.
 - **E13** The anatomy layer reads only instantaneous simulator fields; the cavity pulsates within a beat; arrow count is monotonic in flow; S4 draws a smaller LV than S3; every anatomy-surfaced node maps to a structure; paths are normalised; the ECMO return is geometrically retrograde.

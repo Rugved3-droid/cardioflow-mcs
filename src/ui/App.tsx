@@ -249,7 +249,7 @@ export function App() {
               <dt>W</dt><dd>Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening.</dd>
               <dt>P</dt><dd>Perfusion / unloading plane, full screen.</dd>
               <dt>A</dt><dd>Device / anatomy schematic, full screen.</dd>
-              <dt>I</dt><dd>Inside the vessel: the IABP from inside the aorta, for pane B.</dd>
+              <dt>I</dt><dd>Inside the vessel: the IABP from inside the aorta, or the Impella from inside the LV, for pane B. S toggles 1/8 slow motion while it is open.</dd>
               <dt>D</dt><dd>Run the scripted demo. It sequences itself and stops on its own.</dd>
               <dt>Space</dt><dd>Pause / resume.</dd>
               <dt>Esc</dt><dd>Stop the demo, or close this.</dd>

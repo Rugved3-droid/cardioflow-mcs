@@ -6,19 +6,26 @@ import { describeSettings } from '../ui/labels';
 import { IABP_TIMINGS, type IabpTimingName } from '../model/devices/iabp';
 import type { SimState } from '../model/types';
 import { drawIabp, timingName } from './iabpInterior';
+import { drawImpella } from './impellaInterior';
 import { SLOW_RATE } from './common';
 import './endo.css';
 
-export type EndoKind = 'iabp' | 'none';
+export type EndoKind = 'iabp' | 'impella' | 'none';
 
-/** Which interior view the pane's current device calls for. Reads state only. */
+/**
+ * Which interior view the pane's current device calls for. Reads state only.
+ * With both an Impella and a balloon running (no shipped state does this), the
+ * Impella wins; ECMO has no interior view.
+ */
 export function endoKind(st: SimState): EndoKind {
+  if (st.settings.impellaLevel > 0 || st.act.impellaLevel > 0) return 'impella';
   if (st.settings.iabpOn || st.act.iabpFill > 0) return 'iabp';
   return 'none';
 }
 
 const TITLE: Record<EndoKind, string> = {
   iabp: 'INSIDE THE AORTA — IABP',
+  impella: 'INSIDE THE LEFT VENTRICLE — IMPELLA',
   none: 'INTERIOR VIEW',
 };
 
@@ -59,6 +66,8 @@ export function EndoOverlay({
         const kind = endoKind(sim.state);
         if (kind === 'iabp') {
           drawIabp(ctx, w, h, { s: sim.last, st: sim.state, last: sim.lastBeat, trace: pane.trace, cycleMs: sim.cycleMs, p: sim.p });
+        } else if (kind === 'impella') {
+          drawImpella(ctx, w, h, { s: sim.last, st: sim.state, last: sim.lastBeat, trace: pane.trace, pv: pane.pv, cycleMs: sim.cycleMs, p: sim.p });
         } else ctx.clearRect(0, 0, w, h);
       }),
     [engine, register],
@@ -125,7 +134,8 @@ export function EndoOverlay({
           <canvas ref={ref} aria-label="Interior schematic" />
           {kind === 'none' && (
             <div className="endo-empty">
-              No IABP on pane B. Select S1 (IABP) to see it from inside the aorta.
+              No IABP or Impella on pane B. Select S1 (IABP) to see the balloon from inside the aorta, or
+              S2, S4 or S5 (Impella) to see the pump from inside the left ventricle.
             </div>
           )}
         </div>

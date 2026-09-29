@@ -15,6 +15,7 @@ import type { SteadyKey } from '../model/steadyStates';
 import { PaneRuntime, TwinEngine } from '../runtime/TwinEngine';
 import { coronaryArrowCount, coronaryGradient, coronaryIntegralThisBeat, SLOW_RATE } from './common';
 import { BALLOON_R_MAX, balloonRadius, iabpFrame, IABP_INTERIOR_CUM, IABP_INTERIOR_READS, wallRadius, type IabpFrame } from './iabpInterior';
+import { epiDistance, impellaFrame, impellaGeom, IMPELLA_INTERIOR_CUM, IMPELLA_INTERIOR_READS, inletArrowCount, wallDistance } from './impellaInterior';
 
 type CheckFn = (exp: string, claim: string, why: string, pass: boolean, observed: string, gating?: boolean) => void;
 
@@ -279,6 +280,7 @@ export function endoChecks(fresh: Record<SteadyKey, SimSnapshot>, check: CheckFn
       `empty before opening ${emptyBeforeOpen(ed)} ms vs correct ${emptyBeforeOpen(c)} ms`,
     );
   }
+
   // slow motion, used to film the mistimed beat, must change only the ticks per frame
   {
     const N = 6_000;
@@ -307,6 +309,115 @@ export function endoChecks(fresh: Record<SteadyKey, SimSnapshot>, check: CheckFn
       'the mistimed beat must be filmable without the physiology being touched; like compression, only ticks per frame change',
       same && overlapFrames >= 8,
       `${N} ticks in ${frames} frames: ${same ? 'identical state' : 'STATE DIFFERS'}; 20 ms overlap = ${overlapFrames.toFixed(1)} frames`,
+    );
+  }
+
+  /* ---------------- Impella, from inside the left ventricle ---------------- */
+  fieldCheck(check, IMPELLA_INTERIOR_READS, IMPELLA_INTERIOR_CUM, 'Impella interior');
+
+  {
+    const qs = [0, 0.1, 1, 5, 12, 25, 45, 70, 110];
+    const ns = qs.map(inletArrowCount);
+    check(
+      EXP,
+      'Impella interior: inlet flow is monotonic non-decreasing in qImpella and zero at zero flow',
+      'blood drawn into the inlet must be a faithful function of the pump flow',
+      ns[0] === 0 && nonDecreasing(ns) && ns[ns.length - 1] > ns[3],
+      qs.map((q, i) => `${q}→${ns[i].toFixed(2)}`).join(' '),
+    );
+  }
+
+  // walls: strictly monotonic in volume, thickening as the cavity empties
+  {
+    const vs = [70, 100, 130, 160, 190, 220, 250];
+    const ds = vs.map(wallDistance);
+    const walls = vs.map((v) => epiDistance(v) - wallDistance(v));
+    check(
+      EXP,
+      'Impella interior: the endocardial wall distance is strictly monotonic in vLv, and the wall is thicker when the cavity is emptier',
+      'the walls closing in must be the cavity volume, with a constant muscle mass taking up the difference',
+      strictlyUp(ds) && walls.every((w, i) => i === 0 || w < walls[i - 1]),
+      vs.map((v, i) => `${v}→${ds[i].toFixed(3)}`).join(' ') + ` · wall ${walls[0].toFixed(3)}→${walls[walls.length - 1].toFixed(3)}`,
+    );
+  }
+
+  // the strongest moment: unloading must read as the walls visibly closing in, at 1080p
+  {
+    const g = impellaGeom(1860, 960);
+    const edvAt = (k: SteadyKey) => fresh[k].lastBeat!.lvedv;
+    const px = (v: number) => g.A * wallDistance(v);
+    const s0s2 = px(edvAt('S0')) - px(edvAt('S2'));
+    const s3s4 = px(edvAt('S3')) - px(edvAt('S4'));
+    check(
+      EXP,
+      'Impella interior: at end-diastole the walls sit visibly closer after unloading — S0→S2 by ≥ 60 px and S3→S4 by ≥ 15 px at 1080p',
+      'the chamber unloading around the viewer is the point of the view; it must be large enough to see after video compression',
+      s0s2 >= 60 && s3s4 >= 15,
+      `S0→S2 ${s0s2.toFixed(0)} px (EDV ${edvAt('S0').toFixed(0)}→${edvAt('S2').toFixed(0)} mL); S3→S4 ${s3s4.toFixed(0)} px (EDV ${edvAt('S3').toFixed(0)}→${edvAt('S4').toFixed(0)} mL)`,
+    );
+  }
+
+  // the valve seen from below: at P5 it cracks open briefly every beat; at P8 it never opens
+  {
+    const drift: string[] = [];
+    let worst = 0;
+    const openFrac = (k: SteadyKey) => {
+      const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh[k]);
+      let open = 0;
+      let peak = 0;
+      const perBeat: number[] = [];
+      for (let b = 0; b < 3; b++) {
+        let ob = 0;
+        for (let i = 0; i < sim.cycleMs; i++) {
+          const o = impellaFrame(sim.last, sim.state, null).valveOpen;
+          if (o > 0.02) { open++; ob++; }
+          peak = Math.max(peak, o);
+          sim.tick();
+        }
+        perBeat.push(ob);
+      }
+      const drawn = open / (3 * sim.cycleMs);
+      const metric = fresh[k].lastBeat!.avOpenFraction;
+      worst = Math.max(worst, Math.abs(drawn - metric));
+      drift.push(`${k} drawn ${(100 * drawn).toFixed(0)}% vs metric ${(100 * metric).toFixed(0)}%, per beat ${perBeat.join('/')} ms, peak ${peak.toFixed(2)}`);
+      return { perBeat, peak };
+    };
+    const s4 = openFrac('S4');
+    const s2 = openFrac('S2');
+    const s5 = openFrac('S5');
+    const s3 = openFrac('S3');
+    check(
+      EXP,
+      'Impella interior: the valve drawn from below opens for the fraction of the cycle the AV-open metric reports (within 3 points)',
+      'the picture from below and the number on the tile must be the same claim',
+      worst < 0.03,
+      drift.join('; '),
+    );
+    check(
+      EXP,
+      'Impella interior: at S4 (P5) the valve opens from below on every beat, briefly and less far than at S3; at P8 (S2, S5) it never opens',
+      'the intermittent opening at P5 is why P5 was chosen for the demo; it has to be visible from below, and P8 has to look different',
+      s4.perBeat.every((ms) => ms > 20 && ms < s3.perBeat[0]) && s4.peak < s3.peak && s2.peak === 0 && s5.peak === 0,
+      `S4 ${s4.perBeat.join('/')} ms/beat peak ${s4.peak.toFixed(2)}; S3 ${s3.perBeat[0]} ms peak ${s3.peak.toFixed(2)}; S2 peak ${s2.peak}; S5 peak ${s5.peak}`,
+    );
+  }
+
+  // computing a frame must not touch the simulator
+  {
+    const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh.S4);
+    sim.run(137);
+    const before = JSON.stringify(sim.state) + JSON.stringify(sim.last);
+    const a = impellaFrame(sim.last, sim.state, 200);
+    const b = impellaFrame(sim.last, sim.state, 200);
+    const after = JSON.stringify(sim.state) + JSON.stringify(sim.last);
+    sim.tick();
+    const moved = impellaFrame(sim.last, sim.state, 200).pumpPhase !== a.pumpPhase;
+    check(
+      EXP,
+      'Impella interior: computing a frame leaves the simulator untouched; the same state gives the same frame, and pumped volume moves the arrows',
+      'arrow motion must come from the integral the model keeps, so a paused simulation is a still picture',
+      before === after && JSON.stringify(a) === JSON.stringify(b) && moved,
+      before === after ? `state unchanged; frames identical; one tick moves the arrows: ${moved}` : 'STATE MUTATED',
     );
   }
 }
