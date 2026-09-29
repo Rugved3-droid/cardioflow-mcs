@@ -337,6 +337,21 @@ function drawChamberLabels(c: CanvasRenderingContext2D, g: ImpellaGeom, f: Impel
 
 /* ---------------- the aortic valve, looking up at it from inside the LV ---------------- */
 
+/** Cannula cross-section radius, as a fraction of the annulus radius. */
+export const CANNULA_R = 0.15;
+
+/**
+ * Orifice vertex radius (fraction of annulus) for a valve opening 0..1. Zero when
+ * shut; otherwise it starts at the cannula edge and grows as sqrt(opening), so the
+ * partial opening at P5 (0.44) is drawn clear of the cannula rather than hidden
+ * behind it. Schematic magnitude, exaggerated for legibility; the opening TIME is
+ * exact (E18 matches it to the AV-open tile). Monotonic, zero at zero (E18).
+ */
+export function orificeRadius(valveOpen: number): number {
+  if (valveOpen <= 0) return 0;
+  return CANNULA_R + (0.95 - CANNULA_R) * Math.sqrt(Math.min(valveOpen, 1));
+}
+
 function drawValveFromBelow(c: CanvasRenderingContext2D, W: number, H: number, f: ImpellaFrame) {
   const cx = W * 0.8;
   const cy = H * 0.3;
@@ -353,20 +368,24 @@ function drawValveFromBelow(c: CanvasRenderingContext2D, W: number, H: number, f
   c.lineWidth = 6;
   c.stroke();
 
-  // the orifice: a rounded triangle that grows as the cusps swing apart
+  // the orifice: a triangle that grows outward from the cannula as the cusps swing apart
   const o = f.valveOpen;
-  if (o > 0) {
+  const ro = orificeRadius(o);
+  if (ro > 0) {
     c.beginPath();
     for (let i = 0; i <= 3; i++) {
       const a = -Math.PI / 2 + (i * 2 * Math.PI) / 3;
-      const px = cx + Math.cos(a) * R * 0.92 * o;
-      const py = cy + Math.sin(a) * R * 0.92 * o;
+      const px = cx + Math.cos(a) * R * ro;
+      const py = cy + Math.sin(a) * R * ro;
       if (i === 0) c.moveTo(px, py);
       else c.lineTo(px, py);
     }
     c.closePath();
-    c.fillStyle = 'rgba(255,77,90,0.55)';
+    c.fillStyle = 'rgba(255,77,90,0.85)';
     c.fill();
+    c.strokeStyle = '#ffd0d4';
+    c.lineWidth = 3;
+    c.stroke();
   }
   // coaptation lines: the three cusp edges, shortened by the opening
   c.strokeStyle = COL.ao;
@@ -375,13 +394,14 @@ function drawValveFromBelow(c: CanvasRenderingContext2D, W: number, H: number, f
   for (let i = 0; i < 3; i++) {
     const a = Math.PI / 2 + (i * 2 * Math.PI) / 3;
     c.beginPath();
-    c.moveTo(cx + Math.cos(a) * R * lerp(0, 0.46, o), cy + Math.sin(a) * R * lerp(0, 0.46, o));
+    // coaptation lines point at the orifice's edge midpoints, half the vertex radius
+    c.moveTo(cx + Math.cos(a) * R * 0.5 * ro, cy + Math.sin(a) * R * 0.5 * ro);
     c.lineTo(cx + Math.cos(a) * R * 0.98, cy + Math.sin(a) * R * 0.98);
     c.stroke();
   }
   // the cannula passes through the centre of the valve
   c.beginPath();
-  c.arc(cx, cy, R * 0.15, 0, Math.PI * 2);
+  c.arc(cx, cy, R * CANNULA_R, 0, Math.PI * 2);
   c.fillStyle = '#233845';
   c.fill();
   c.strokeStyle = COL.impella;
@@ -389,7 +409,7 @@ function drawValveFromBelow(c: CanvasRenderingContext2D, W: number, H: number, f
   c.stroke();
   c.restore();
 
-  label(c, 'Impella cannula', cx + R * 0.2, cy + R * 0.28, COL.impella, 14);
+  label(c, 'Impella cannula', cx + R * 0.1, cy + R * 0.78, COL.impella, 14);
   label(c, o > 0 ? 'OPEN — the LV is ejecting past the pump' : 'SHUT — the pump is carrying the output', cx, cy + R + 32, o > 0 ? COL.ao : COL.dim, 17, 'center', 700);
 }
 

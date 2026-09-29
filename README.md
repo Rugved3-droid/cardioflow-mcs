@@ -232,6 +232,16 @@ full excursion** (136 ms and 72% at S3). "Intermittent" here means brief opening
 beat, not skipped beats. At P8 (S2, S5) it never opens, so the two levels look different
 from below.
 
+The from-below orifice is drawn outward from the cannula edge and grows as the square
+root of the opening, so the P5 partial opening (44%) sits clear of the cannula instead of
+behind it. Its size is schematic; its timing is exact.
+
+> **Shooting note.** Two moments in these views are invisible at real time and must be
+> filmed at **1/8x** (press **S** in the view): the late-deflation balloon/open-valve
+> overlap (caught in 1 of 35 real-time frames) and the P5 valve opening from below (0 of 8).
+> At 1/8x each is caught on every beat. Slow motion only changes ticks per frame, and E18
+> checks that the state it reaches is bit-identical to real time.
+
 E18 adds, for the Impella: fields are real; inlet flow monotonic in `qImpella`, zero at
 zero; wall distance strictly monotonic in `vLv` with the wall thickening as it empties;
 the closing-in is at least 60 px (S0 → S2) and 15 px (S3 → S4) at 1080p; the drawn

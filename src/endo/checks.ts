@@ -15,7 +15,7 @@ import type { SteadyKey } from '../model/steadyStates';
 import { PaneRuntime, TwinEngine } from '../runtime/TwinEngine';
 import { coronaryArrowCount, coronaryGradient, coronaryIntegralThisBeat, SLOW_RATE } from './common';
 import { BALLOON_R_MAX, balloonRadius, iabpFrame, IABP_INTERIOR_CUM, IABP_INTERIOR_READS, wallRadius, type IabpFrame } from './iabpInterior';
-import { epiDistance, impellaFrame, impellaGeom, IMPELLA_INTERIOR_CUM, IMPELLA_INTERIOR_READS, inletArrowCount, wallDistance } from './impellaInterior';
+import { CANNULA_R, orificeRadius, epiDistance, impellaFrame, impellaGeom, IMPELLA_INTERIOR_CUM, IMPELLA_INTERIOR_READS, inletArrowCount, wallDistance } from './impellaInterior';
 
 type CheckFn = (exp: string, claim: string, why: string, pass: boolean, observed: string, gating?: boolean) => void;
 
@@ -399,6 +399,27 @@ export function endoChecks(fresh: Record<SteadyKey, SimSnapshot>, check: CheckFn
       'the intermittent opening at P5 is why P5 was chosen for the demo; it has to be visible from below, and P8 has to look different',
       s4.perBeat.every((ms) => ms > 20 && ms < s3.perBeat[0]) && s4.peak < s3.peak && s2.peak === 0 && s5.peak === 0,
       `S4 ${s4.perBeat.join('/')} ms/beat peak ${s4.peak.toFixed(2)}; S3 ${s3.perBeat[0]} ms peak ${s3.peak.toFixed(2)}; S2 peak ${s2.peak}; S5 peak ${s5.peak}`,
+    );
+  }
+
+  // the P5 orifice must read at 1080p: drawn clear of the cannula, not hidden behind it
+  {
+    const os = [0, 0.02, 0.1, 0.2, 0.44, 0.72, 1];
+    const rs = os.map(orificeRadius);
+    const R = Math.min(960 * 0.2, 1860 * 0.1); // annulus radius, px, at 1080p
+    let p5Peak = 0;
+    const sim = Sim.fromSnapshot(SHOCK_PATIENT, fresh.S4);
+    for (let i = 0; i < sim.cycleMs; i++) {
+      p5Peak = Math.max(p5Peak, impellaFrame(sim.last, sim.state, null).valveOpen);
+      sim.tick();
+    }
+    const clearPx = (orificeRadius(p5Peak) - CANNULA_R) * R;
+    check(
+      EXP,
+      'Impella interior: the from-below orifice is monotonic in opening, zero when shut, and at the P5 peak reaches ≥ 80 px beyond the cannula at 1080p',
+      'the brief partial opening at P5 is what justifies P5 over P8; it has to be visible, not hidden behind the cannula',
+      rs[0] === 0 && strictlyUp(rs.slice(1)) && clearPx >= 80,
+      os.map((o, i) => `${o}→${rs[i].toFixed(2)}`).join(' ') + ` · P5 peak opening ${p5Peak.toFixed(2)} → ${clearPx.toFixed(0)} px beyond the cannula`,
     );
   }
 
