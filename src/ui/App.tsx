@@ -16,6 +16,7 @@ import { AnatomyBand } from './AnatomyBand';
 import { useDemo } from '../demo/useDemo';
 import { DEMO_SCRIPT } from '../demo/script';
 import { SoloView } from './SoloView';
+import { EndoOverlay } from '../endo/EndoOverlay';
 
 type Mode = 'explore' | 'assess';
 /** Solo is the default; twin is switched into with C. Both are views over one engine. */
@@ -30,6 +31,7 @@ export function App() {
   const [planeBig, setPlaneBig] = useState(false);
   const [anatBig, setAnatBig] = useState(false);
   const [help, setHelp] = useState(false);
+  const [endo, setEndo] = useState(false);
   const { why, start, stop, activeNode, chainNodes } = useWhy();
   const chainIds = useMemo(() => new Set(chainNodes.map((n) => n.id)), [chainNodes]);
 
@@ -126,6 +128,10 @@ export function App() {
       }
       if (e.key === 'p' || e.key === 'P') {
         setPlaneBig((v) => !v);
+        return;
+      }
+      if ((e.key === 'i' || e.key === 'I') && mode === 'explore') {
+        setEndo((v) => !v);
         return;
       }
       if (e.key === 'w' || e.key === 'W') {
@@ -243,6 +249,7 @@ export function App() {
               <dt>W</dt><dd>Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening.</dd>
               <dt>P</dt><dd>Perfusion / unloading plane, full screen.</dd>
               <dt>A</dt><dd>Device / anatomy schematic, full screen.</dd>
+              <dt>I</dt><dd>Inside the vessel: the IABP from inside the aorta, for pane B.</dd>
               <dt>D</dt><dd>Run the scripted demo. It sequences itself and stops on its own.</dd>
               <dt>Space</dt><dd>Pause / resume.</dd>
               <dt>Esc</dt><dd>Stop the demo, or close this.</dd>
@@ -269,6 +276,7 @@ export function App() {
           </div>
         </div>
       )}
+      {endo && mode === 'explore' && !demo.running && <EndoOverlay engine={engine} register={register} version={version} onClose={() => setEndo(false)} />}
       {why && engine.left.metrics && engine.right.metrics && (
         <ChainRibbon
           why={why}

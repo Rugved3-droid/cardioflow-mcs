@@ -159,6 +159,55 @@ that every node claiming the anatomy surface maps to a drawable structure, that 
 well formed inside the unit box, and that the ECMO return runs geometrically opposite to
 antegrade aortic flow rather than merely being labelled retrograde.
 
+### Endovascular interior views
+
+Press **I** in Explore for a view from inside the vessel, for pane B (the pane solo shows).
+It is never part of a default view, does nothing in a resident session, and closes during
+the demo. The code is in `src/endo/`; nothing existing was changed to draw it.
+
+**IABP, from inside the aorta.** A cut-away with the viewer in the lumen: aortic valve,
+root with both coronary ostia, arch, and the descending aorta with the balloon.
+
+| drawn | driven by |
+|---|---|
+| balloon radius | `vBalloon` (cross-section ~ volume) |
+| root / descending wall position | `pAo` / `pSa` (r ~ sqrt of stressed volume) — the diastolic rise is displacement, not a number |
+| coronary inflow | the DPTI integrand, (P_Ao − P_LV)⁺ while LV activation < 0.1; arrow position from its running integral over the beat |
+| valve leaflets, antegrade arrows | `qAortic`, positions from `state.cum.aortic` |
+| root ↔ descending flow | `qRc` (negative = pushed back toward the ostia) |
+| red balloon / red strip band | balloon > 2 mL while the valve is open — the mistiming made visible |
+
+Under it, a one-cycle sweep on the same clock shows valve opening, balloon volume and
+coronary drive, with the console's two timing references marked.
+
+> **The "deflation reference" marker is the *unassisted* aortic-valve opening, and with a
+> correctly timed balloon the valve opens *before* it. That is correct, not a bug.** The
+> console captures both references from an unassisted beat (see `iabp.ts`). Once the
+> balloon is working, pre-systolic deflation lowers aortic end-diastolic pressure
+> (52.9 → 40.6 mmHg at S1), so the LV reaches aortic pressure sooner and the valve opens
+> earlier than on the reference beat. The balloon is still fully deflated by then (E18:
+> zero collision frames at correct timing). Do not "fix" the earlier opening, and do not
+> move the marker to the assisted opening: the console times off the unassisted beat.
+
+**Filming a mistimed beat.** In early inflation and late deflation the balloon and the
+open valve overlap for about 20 ms, one frame at real time. Press **S** in the view for
+**⅛× slow motion**: fewer 1 ms ticks per rendered frame, the same mechanism as time
+compression run the other way, so the overlap lasts about ten frames at 60 fps. The tick
+and the physiology are untouched (E18 checks the state is bit-identical to real time). A
+therapy change still compresses time until it settles; slow motion resumes afterwards,
+and closing the view returns to real time. The strip also holds the whole last cycle, so
+the red overlap band stays on screen, and **Space** freezes the frame.
+
+Validation **E18** asserts that every animated quantity names a real instantaneous
+simulator field; balloon size is strictly monotonic in `vBalloon`; wall position is
+strictly monotonic in pressure; coronary inflow is monotonic in the gradient and zero at
+zero; the drawn gradient integrates to the reported DPTI within 2%; computing a frame
+never touches the sim; correct timing and the four mistimings are pairwise different from
+inside (≥ 12 px at 1080p); and each mistiming shows its own signature — early inflation
+as an overlap at the *end* of ejection, late deflation at the *start*, late inflation as
+a late-filling balloon after closure, early deflation as an empty balloon long before
+opening.
+
 ### Perfusion / unloading plane
 
 Two axes a single number cannot express, plotted against each other so the divergence
@@ -278,6 +327,7 @@ Measured: 15 steps, 145 s of simulated time, about 60 s of wall clock.
 | **W** | Explain the next variable in turn: MAP, LVEDP, native SV, aortic-valve opening. |
 | **P** | Perfusion / unloading plane, full screen. |
 | **A** | Device / anatomy schematic, full screen. |
+| **I** | Inside the vessel: the IABP from inside the aorta, for pane B. **S** toggles 1/8 slow motion while it is open. |
 | **D** | Run the scripted demo. |
 | **Space** | Pause / resume. |
 | **Esc** | Stop the demo, or close an overlay. |
@@ -519,6 +569,7 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **E4** ECMO 4 + Impella ramp: LVEDP↓ strictly, endpoint below the E2 endpoint.
 - **E5** IABP on vs off: augmentation↑, AoEDP↓, DPTI↑, SV↑, LVEDP↓, PVA↓. In 1:2, assisted systole < unassisted systole and assisted AoEDP < unassisted AoEDP.
 - **E6** Correct timing vs each of the four mistimings, using each one's textbook signature.
+- **E18** The interior views read only simulator state; balloon, wall and coronary inflow are monotonic in their fields; the coronary drive is the DPTI integrand; each IABP mistiming is visibly and distinctively different from inside; slow motion is bit-identical to real time.
 - **E15** The scripted demo produces an identical trace on every run and at every rate, finishes by itself, fires each WHY only once both panes have settled, and never starts an intervention with a chain still on screen.
 - **E14** Time compression is bit-identical at every supported rate; it starts on an intervention and ends by itself; shipped snapshots are genuinely converged.
 - **E13** The anatomy layer reads only instantaneous simulator fields; the cavity pulsates within a beat; arrow count is monotonic in flow; S4 draws a smaller LV than S3; every anatomy-surfaced node maps to a structure; paths are normalised; the ECMO return is geometrically retrograde.

@@ -1,0 +1,24 @@
+/* Endovascular interior views. New selectors only; nothing in styles.css is overridden. */
+.endo-overlay {
+  position: fixed; inset: 0; z-index: 55; display: grid; place-items: center;
+  background: rgba(3, 5, 8, 0.94);
+}
+.endo-inner {
+  width: 97vw; height: 94vh; display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: 12px 16px 10px;
+}
+.endo-head { display: flex; align-items: center; gap: 18px; }
+.endo-title { font: 700 20px var(--mono); letter-spacing: 0.12em; color: var(--text); }
+.endo-sub { font: 500 15px var(--sans); color: var(--dim); }
+.endo-spacer { flex: 1; }
+.endo-key { font: 600 13px var(--mono); color: var(--faint); }
+.endo-ctl { display: flex; align-items: center; gap: 8px; font: 600 15px var(--sans); color: var(--balloon); }
+.endo-ctl select { font: 600 15px var(--sans); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+.endo-canvas { position: relative; flex: 1; min-height: 0; }
+.endo-canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.endo-empty {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  font: 500 22px var(--sans); color: var(--dim); padding: 0 20%;
+}
+.endo-slow { font: 700 14px var(--mono); letter-spacing: 0.06em; color: var(--dim); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.endo-slow.on { color: #06080b; background: var(--rise); border-color: var(--rise); }

@@ -34,6 +34,7 @@ import { ANATOMY_READS, arrowCountFor, valveOpenFraction, ventricleGeometry } fr
 import { SOLO_READS } from '../src/ui/SoloView';
 import { ACTIVE_ITEMS, RETIRED_ITEMS, type Direction } from '../src/assessment/itemBank';
 import shippedSnapshots from '../src/model/steadyStates.json';
+import { endoChecks } from '../src/endo/checks';
 
 /* ------------------------------------------------------------------ invariants */
 
@@ -800,6 +801,9 @@ function main() {
     cmp('E17', 'the cavity is smaller when it holds less blood', empty.endoW, '<', full.endoW, 'cavity tracks volume', true, 4);
     check('E17', 'the epicardium changes far less than the cavity (the wall absorbs the difference)', 'a ventricle whose outline shrank as much as its cavity would read as deflating, not contracting', Math.abs(empty.epiW - full.epiW) < Math.abs(empty.endoW - full.endoW) * 0.6, `epi Δ ${Math.abs(empty.epiW - full.epiW).toFixed(4)} vs cavity Δ ${Math.abs(empty.endoW - full.endoW).toFixed(4)}`);
   }
+
+  /* E18 — endovascular interior views (src/endo/checks.ts) */
+  endoChecks(fresh, check);
 
   /* Shipped snapshots match the current model */
   check(
