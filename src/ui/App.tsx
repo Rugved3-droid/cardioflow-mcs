@@ -78,6 +78,7 @@ export function App() {
 
   const switchMode = (m: Mode) => {
     if (m === mode) return;
+    stop(); // a chain opened in Explore must not carry into a resident session
     engine.speed = 1;
     engine.load('S0', 'S0', STEADY_LABEL.S0, STEADY_LABEL.S0);
     setActive('S0');
@@ -128,6 +129,7 @@ export function App() {
         return;
       }
       if (e.key === 'w' || e.key === 'W') {
+        if (mode !== 'explore') return; // in a resident session the chain would answer the mechanism item
         const t = WHY_TARGETS[whyIdx.current % WHY_TARGETS.length];
         whyIdx.current += 1;
         explain(t);
@@ -226,7 +228,7 @@ export function App() {
               <Deltas engine={engine} version={version} />
               <PlanePanel engine={engine} register={register} version={version} />
             </div>
-            <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={explain} />
+            <Pane side="right" engine={engine} register={register} version={version} activeNode={activeNode} chainIds={chainIds} onWhy={mode === 'explore' ? explain : undefined} />
           </main>
           <AnatomyBand engine={engine} register={register} activeNode={activeNode} version={version} />
         </>
