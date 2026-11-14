@@ -2,6 +2,7 @@ cff-version: 1.2.0
 message: "If you use CardioFlow Twin, please cite the code release below (GitHub tag and commit). A manuscript describing its verification has been submitted to ASAIO Journal."
 title: "CardioFlow Twin: paired-state simulator of temporary mechanical circulatory support"
 type: software
+license: MIT
 authors:
   - given-names: Rugved
     family-names: Parmar

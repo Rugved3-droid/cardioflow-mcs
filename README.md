@@ -631,3 +631,7 @@ The code and verification state described in the manuscript submitted to *ASAIO 
 https://github.com/Rugved3-droid/cardioflow-mcs at tag `v1.0-asaio`, commit `ba4cc550ed089b3f773a51337ff99bae30db7405`. Citation metadata is in `CITATION.cff`.
 The verification scripts, extracted benchmark values, results and submission files are in `paper/`; rebuild everything with `make -C paper paper`
 (or `python paper/scripts/make_paper.py`). The simulator is not validated for patient-specific decisions.
+
+## License
+
+MIT License, copyright (c) 2026 Rugved Parmar. See `LICENSE`.

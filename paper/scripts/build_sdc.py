@@ -65,6 +65,11 @@ parts.append('# Table S7. IABP balloon volume on VA-ECMO 4 L/min (knob variant; 
 img = base64.b64encode((R / 'figs' / 'v4_tornado.png').read_bytes()).decode()
 parts.append('# Figure S1. One-at-a-time ±20% sensitivity\n' + demote(section(rep, '## V4.', '## V5.')) +
              f'\n\n<img src="data:image/png;base64,{img}" style="width:100%">\n')
+shot = base64.b64encode((R / 'figs' / 'twin_pane_s3_s4.png').read_bytes()).decode()
+parts.append('# Figure S2. Full screen of the paired-state display\n'
+             'Released application (release/CardioFlow-MCS.html) in compare mode after settling: pane A, VA-ECMO 4 L/min; pane B, '
+             'VA-ECMO 4 L/min + Impella P5. Captured by `paper/scripts/screenshot_twin.ts`; Figure 1B is a crop of the central B − A column.\n\n'
+             f'<img src="data:image/png;base64,{shot}" style="width:100%">\n')
 parts.append('# Section S2. Parameter provenance\n' + demote(prov.split('\n', 1)[1]))
 parts.append('# Section S3. Benchmark sources and extraction\n' + demote(section(rep, '## V3b.', '## V4.')))
 md_all = '\n\n'.join(parts)

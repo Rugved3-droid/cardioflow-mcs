@@ -35,7 +35,7 @@ for m in re.finditer(r'@article\{(\w+),(.*?)\n\}', bib, re.S):
         f[fm.group(1).lower()] = body[fm.end():j - 1].strip(); i = j
     entries[key] = f
 
-TEX = {r"{\'e}": 'é', r"{\'a}": 'á', r'{\o}': 'ø', r'{\v{c}}': 'č', r'{\v{s}}': 'š', r'{\v{t}}': 'ť', r'{\v{z}}': 'ž', r'{\ae}': 'æ'}
+TEX = {r"{\'e}": 'é', r"{\'a}": 'á', r'{\o}': 'ø', r'{\v{c}}': 'č', r'{\v{s}}': 'š', r'{\v{t}}': 'ť', r'{\v{z}}': 'ž', r'{\ae}': 'æ', r'{\"a}': 'ä', r'{\"o}': 'ö'}
 
 
 def detex(s):
@@ -45,7 +45,11 @@ def detex(s):
 
 JOURNAL = {'ASAIO Journal': 'ASAIO J', 'Perfusion': 'Perfusion', 'Journal of Translational Medicine': 'J Transl Med',
            'Frontiers in Cardiovascular Medicine': 'Front Cardiovasc Med', 'EuroIntervention': 'EuroIntervention',
-           'Journal of the American College of Cardiology': 'J Am Coll Cardiol', 'New England Journal of Medicine': 'N Engl J Med'}
+           'Journal of the American College of Cardiology': 'J Am Coll Cardiol', 'New England Journal of Medicine': 'N Engl J Med',
+           'Circulation Research': 'Circ Res', 'American Journal of Physiology': 'Am J Physiol',
+           'Medical and Biological Engineering and Computing': 'Med Biol Eng Comput',
+           'Catheterization and Cardiovascular Interventions': 'Catheter Cardiovasc Interv', 'Journal of Cardiac Failure': 'J Card Fail',
+           'BioMedical Engineering OnLine': 'Biomed Eng Online', 'Bioengineering': 'Bioengineering (Basel)'}
 
 
 def author_short(a):
@@ -174,7 +178,7 @@ for lab, txt in FM.LEGENDS:
 d.add_heading('Supplemental Digital Content', level=1)
 para(d, 'Supplemental Digital Content 1 (PDF): model equations (Section S1), full parameter table (Table S1), numerical verification (Table S2), '
         'Impella P1–P9 sweep (Table S3), baseline comparison (Table S4), full benchmark concordance with source locations (Table S5), '
-        'baroreflex on vs off (Table S6), IABP balloon volume (Table S7), sensitivity tornado plot (Figure S1), parameter provenance (Section S2) and benchmark extraction (Section S3).')
+        'baroreflex on vs off (Table S6), IABP balloon volume (Table S7), sensitivity tornado plot (Figure S1), full paired-state screen (Figure S2), parameter provenance (Section S2) and benchmark extraction (Section S3).')
 d.save(OUT / 'Manuscript.docx')
 
 # ---------------- TitlePage.docx

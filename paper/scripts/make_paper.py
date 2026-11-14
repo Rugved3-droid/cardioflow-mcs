@@ -12,7 +12,7 @@ if not SKIP:
     steps += [TS('v4_sensitivity.ts', str(i), '4') for i in range(4)] + [TS('v4_sensitivity.ts', 'aggregate'), TS('v5_twin.ts')]
 steps += [PY('build_benchmarks.py'), TS('v2_baseline.ts'), TS('v3_concordance.ts'), TS('v3_sweep.ts'), TS('m2_impella_vs_iabp.ts'),
           PY('m3_reflex_table.py'), PY('fig_phase1.py'), PY('fig_v3_benchmarks.py'), TS('screenshot_twin.ts'), PY('fig_submission.py'),
-          PY('build_tables.py'), PY('build_manuscript.py'), PY('build_sdc.py'), TS('html_to_pdf.ts'), PY('build_visual_abstract.py')]
+          PY('build_tables.py'), PY('build_manuscript.py'), PY('build_sdc.py'), TS('html_to_pdf.ts'), PY('build_visual_abstract.py'), PY('check_visual_abstract.py'), PY('verify_numbers.py')]
 for cmd in steps:
     print('>>', ' '.join(cmd), flush=True)
     subprocess.run(cmd, check=True, shell=(cmd[0] == 'npx'))

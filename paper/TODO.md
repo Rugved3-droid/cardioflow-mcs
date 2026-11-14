@@ -1,20 +1,15 @@
 # TODO: open items before submission (ASAIO)
 
 ## Author must check or supply
-1. [ ] **LICENSE.** The repository has no LICENSE file, but the manuscript says "open-source". Add a license, or change the wording.
-2. [ ] **[CITE NEEDED] (4):**
-   - time-varying elastance / double-Hill activation (Methods, Model);
-   - three-element Windkessel (Methods, Model);
-   - baroreflex sigmoid model (Methods, Model);
-   - SCAI stage C–D shock classification (Methods, Model).
-   These need references outside `references_provided.bib`; add them to the .bib and rebuild.
-3. [ ] **References: 10 used (target 20–30).** Only the provided .bib may be cited. Consider adding sources for item 2 and further background (for example ECMO LV-distension incidence, Impella H–Q characteristics, IABP physiology).
-4. [ ] **Title page:** ORCIDs (placeholders), funding (currently "None", unconfirmed), COI (currently "none", unconfirmed), author contributions, your degree in the cover letter.
+1. [x] LICENSE: MIT added (2026-11-14).
+2. [x] [CITE NEEDED]: all 4 filled with Crossref-verified references.
+3. [x] References: 20 (target 18–22).
+4. [ ] **Title page:** ORCIDs (placeholders), funding (currently "None", unconfirmed), COI (currently "none", unconfirmed), author contributions, degrees for Md Fahim and Shreya P. Trivedi if ASAIO wants them on the title page (Rugved Parmar = MBBS, done).
 5. [ ] **AI disclosure (Methods):** the text states that the authors reviewed the code, checked extracted values against the sources, and approved the text. Make sure that is true before submitting.
-6. [ ] **ASAIO reference style:** check the author-list truncation rule (currently all authors if ≤ 6, otherwise the first 3 + "et al") against the current Instructions for Authors.
-7. [ ] **Figure 1B:** the screenshot text is application-size (< 12 pt). Accept it, or crop to one pane or region.
-8. [ ] **Visual abstract:** open `submission/VisualAbstract.pptx` and check text fit (it was not rendered here; no PowerPoint or LibreOffice available).
-9. [ ] **Word count:** main text 2,159 (below the 2,600–2,800 target, within the 3,500 limit).
+6. [x] **ASAIO reference style** (confirmed by author): check the author-list truncation rule (currently all authors if ≤ 6, otherwise the first 3 + "et al") against the current Instructions for Authors.
+7. [x] **Figure 1B:** recaptured at 3x and cropped to the B − A column; the smallest on-screen text prints at 12.3 pt (asserted in fig_submission.py). Full screen moved to SDC Figure S2.
+8. [ ] **Visual abstract:** text fit is checked by font metrics (`scripts/check_visual_abstract.py`: all boxes fit, no collisions). A LibreOffice render was NOT done: the LibreOffice install needs Windows admin approval (a UAC prompt). Approve the install or render it yourself, then glance at it.
+9. [ ] **Word count:** main text 2,192 (below the 2,600–2,800 target, within the 3,500 limit).
 10. [ ] `paper/asaio_guide.md` was never supplied; formatting follows your prompt's rules.
 
 ## Done

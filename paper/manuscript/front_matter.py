@@ -11,7 +11,7 @@ TITLE_ALTERNATIVES = [
 RUNNING_HEAD = 'Paired-State MCS Simulation'
 
 AUTHORS = [
-    ('Rugved Parmar', '1', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
+    ('Rugved Parmar, MBBS', '1', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
     ('Md Fahim', '1', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
     ('Shreya P. Trivedi', '2', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
 ]
@@ -19,7 +19,7 @@ AFFILIATIONS = [
     ('1', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA'),
     ('2', 'Beth Israel Deaconess Medical Center / Harvard Medical School, Boston, MA, USA'),
 ]
-CORRESPONDING = ('Rugved Parmar', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA',
+CORRESPONDING = ('Rugved Parmar, MBBS', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA',
                  'parmarrugved@gmail.com')
 FUNDING = 'None. [AUTHOR TO CONFIRM]'
 COI = 'The authors declare no conflicts of interest. [AUTHOR TO CONFIRM]'
@@ -31,9 +31,7 @@ LEGENDS = [
      'membrane oxygenation [VA-ECMO] as a set flow from systemic veins to systemic arteries); the intra-aortic balloon pump (IABP) displaces 40 mL within the '
      'systemic arterial compliance; dotted arrow, bronchial shunt. The baroreflex acts on systemic vascular resistance (SVR). AV, aortic valve; C, compliance; '
      'E(t), time-varying elastance; EDPVR, end-diastolic pressure–volume relation; LA, left atrium; MV, mitral valve; PV, pulmonic valve; PVR, pulmonary '
-     'vascular resistance; Rc, characteristic impedance; RV, right ventricle; TV, tricuspid valve. (B) Screenshot of the released application in compare mode '
-     'after the panes settled: pane A, VA-ECMO 4 L/min; pane B, the same patient with Impella P5 added (a single setting differs). The central column shows '
-     'B − A differences. Screen text is reproduced at application size; all values are reported in the text and tables.'),
+     'vascular resistance; Rc, characteristic impedance; RV, right ventricle; TV, tricuspid valve. (B) Paired-difference column of the released application in compare mode after both panes settled: pane A, VA-ECMO 4 L/min; pane B, the same patient with Impella P5 added (a single setting differs). Each row shows B − A (MAP, mmHg; total flow, L/min; SVR, Wood units; LVEDP, mmHg; LVEDV, mL; native stroke volume [SV], mL; aortic valve [AV] opening, % of cycle; pressure–volume area [PVA], mmHg·mL), as rounded by the application. The full screen is shown in SDC Figure S2.'),
     ('Figure 2.', 'Left ventricular response to increasing VA-ECMO flow, model vs benchmarks. Percent change from each series\' lowest flow in (A) end-diastolic '
      'volume, (B) end-systolic volume, (C) end-diastolic pressure and (D) stroke volume (end-diastolic minus end-systolic volume). Lines, model with the '
      'baroreflex on (solid, primary) and off (dashed, sensitivity); model baseline is no support. Open circles, Ostadal et al. (porcine acute shock, '
@@ -63,7 +61,7 @@ The work fits ASAIO Journal's readership in circulatory support and biomedical e
 
 Sincerely,
 
-Rugved Parmar, MD [AUTHOR TO CONFIRM DEGREE]
+Rugved Parmar, MBBS
 Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center
 Brooklyn, NY, USA
 parmarrugved@gmail.com

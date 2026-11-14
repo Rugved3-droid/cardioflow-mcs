@@ -5,3 +5,4 @@ benchmarks/text/mollerhelgestad2019.txt
 benchmarks/img/mh_*
 Visual_Abstract_Templates.pptx
 # large CMYK TIFs are rebuilt by scripts/fig_submission.py; PNG previews are tracked
+__pycache__/

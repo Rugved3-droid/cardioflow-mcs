@@ -41,8 +41,8 @@ def panel(ax, letter):
 
 
 # ---------------- Figure 1: A model schematic (line art) + B twin-pane screenshot
-fig = plt.figure(figsize=(W, 8.6))
-ax = fig.add_axes([0.0, 0.47, 1.0, 0.53]); ax.set_xlim(0, 100); ax.set_ylim(0, 60); ax.axis('off')
+fig = plt.figure(figsize=(W, 9.2))
+ax = fig.add_axes([0.0, 5.45 / 9.2, 1.0, 3.75 / 9.2]); ax.set_xlim(0, 100); ax.set_ylim(0, 63); ax.axis('off')
 ax.text(0, 58, 'A', fontsize=14, fontweight='bold', va='top')
 
 
@@ -69,7 +69,7 @@ box(2, 20, 16, 10, 'Pulmonary\nartery (C$_{PA}$)')
 arrow(21.8, 45, 34.2, 45, 'MV', ly=2.2)
 arrow(50.8, 45, 63.2, 45, 'AV', ly=2.2)
 arrow(79.8, 42, 86, 32, 'R$_c$', lx=3)
-arrow(86, 19.2, 74.8, 10, 'SVR\n(baroreflex)', lx=-11, ly=1)
+arrow(86, 19.2, 74.8, 10, 'SVR\n(baroreflex)', lx=-14, ly=4)
 arrow(53.2, 8, 44.8, 8, 'TV', ly=-2.4)
 arrow(29.2, 9, 13, 19.2, 'PV', lx=-4)
 arrow(10, 30.8, 10, 39.2, 'PVR', lx=-4.5)
@@ -77,16 +77,33 @@ arrow(80, 27, 21.6, 41.5, None, ls=(0, (1, 2)), rad=0.12, col=MUTED)
 ax.text(52, 30.5, 'bronchial shunt', ha='center', fontsize=12, color=MUTED)
 # devices
 arrow(44, 50.8, 70, 50.8, None, rad=-0.45, ls=(0, (5, 2)))
-ax.text(57, 57.5, 'Impella (linear H–Q line)', ha='center', fontsize=12)
+ax.text(57, 60.5, 'Impella (linear H–Q line)', ha='center', fontsize=12)
 arrow(66, 2.2, 93, 19.2, None, rad=0.45, ls=(0, (5, 2)))
 ax.text(99.5, 1.0, 'VA-ECMO\n(set flow)', ha='right', va='bottom', fontsize=12)
-axb = fig.add_axes([0.0, 0.0, 1.0, 0.45]); axb.axis('off')
+# Panel B: crop of the app's paired-difference column (B − A). The crop is sized so the smallest on-screen
+# text prints at >= 12 pt (checked below from twin_pane_text.json); the full screen is SDC Figure S2.
+import json
 shot = R / 'figs' / 'twin_pane_s3_s4.png'
-if shot.exists():
-    axb.imshow(Image.open(shot).convert('RGB'))
-else:
-    axb.text(0.5, 0.5, 'twin_pane_s3_s4.png missing: run screenshot_twin.ts', ha='center')
-axb.text(0, 1.02, 'B', transform=axb.transAxes, fontsize=14, fontweight='bold', va='bottom')
+texts = json.load(open(R / 'figs' / 'twin_pane_text.json', encoding='utf8'))
+CROP = (826, 52, 1094, 362)  # CSS px: x0, y0, x1, y1 (Δ B − A column)
+DSF = 3
+im = Image.open(shot).convert('RGB')
+crop = im.crop(tuple(v * DSF for v in CROP))
+inside = [t for t in texts if t['x'] >= CROP[0] - 1 and t['x'] + t['w'] <= CROP[2] + 1 and t['y'] >= CROP[1] - 1 and t['y'] + t['h'] <= CROP[3] + 1]
+min_fs = min(t['fs'] for t in inside)
+BW = 4.15  # printed width of panel B, inches
+pt_per_px = BW * 72 / (CROP[2] - CROP[0])
+assert min_fs * pt_per_px >= 12, f'smallest on-screen text prints at {min_fs * pt_per_px:.1f} pt'
+print(f'Figure 1B: {len(inside)} text items, smallest {min_fs:.0f} px -> {min_fs * pt_per_px:.1f} pt in print')
+FH = fig.get_figheight()
+bh = BW * (CROP[3] - CROP[1]) / (CROP[2] - CROP[0])
+axb = fig.add_axes([0.0, 0.0, BW / W, bh / FH]); axb.axis('off'); axb.imshow(crop)
+fig.text(0.0, (bh + 0.05) / FH, 'B', fontsize=14, fontweight='bold', va='bottom')
+fig.text((BW + 0.2) / W, (bh - 0.1) / FH,
+         'Released application,\ncompare mode, settled.\n\n'
+         'Pane A: VA-ECMO\n4 L/min.\nPane B: same patient\n+ Impella P5.\n\n'
+         'One setting differs;\nrows show B − A.\n\n'
+         'Full screen:\nSDC Figure S2.', fontsize=12, va='top', ha='left')
 save(fig, 'Figure1', 600)
 
 # ---------------- Figure 2: ECMO flow sweep vs benchmarks (% change from each series' lowest flow)
