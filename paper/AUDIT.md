@@ -1,6 +1,6 @@
 # AUDIT: ASAIO submission package (CardioFlow Twin)
 
-Built 2026-11-14 on branch `paper/asaio-verification` (not merged to main). The code state described by the manuscript is tag `v1.0-asaio` = commit `ba4cc550ed089b3f773a51337ff99bae30db7405`. `src/` is unchanged throughout the paper work (last model change `6d74829`).
+Built 2026-11-14 on branch `paper/asaio-verification` (not merged to main). The code state described by the manuscript is tag `v1.0-asaio` = commit `97f5f0b3d7a30296a8672894bb36ecc9cd65b654`. `src/` is unchanged throughout the paper work (last model change `6d74829`).
 
 ## How to rebuild
 `make -C paper paper` or `python paper/scripts/make_paper.py` (add `--skip-verification` to reuse the V1–V5 results). Requires Node/npx tsx, Python 3 (pandas, matplotlib, python-docx, python-pptx, markdown, Pillow) and Chrome.
