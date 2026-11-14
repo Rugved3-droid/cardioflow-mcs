@@ -4,3 +4,4 @@ benchmarks/mollerhelgestad2019_landing.html
 benchmarks/text/mollerhelgestad2019.txt
 benchmarks/img/mh_*
 Visual_Abstract_Templates.pptx
+# large CMYK TIFs are rebuilt by scripts/fig_submission.py; PNG previews are tracked
