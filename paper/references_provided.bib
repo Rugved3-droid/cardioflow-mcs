@@ -1,0 +1,122 @@
+% references_provided.bib — CardioFlow Twin (ASAIO).
+% All VERIFY fields resolved 2026-11-14 against the downloaded Europe PMC XML (paper/benchmarks/xml),
+% the publisher page (Moller-Helgestad) and Crossref records for each DOI. Nothing left marked VERIFY.
+% Roles: consistency = the source model or a calibration anchor of CardioFlow (paper/parameter_provenance.md);
+% independent = not used anywhere in CardioFlow's code or history before this paper.
+
+@article{donker2019simulation,
+  author  = {Donker, Dirk W. and Brodie, Daniel and Henriques, Jos{\'e} P. S. and Broom{\'e}, Michael},
+  title   = {Left Ventricular Unloading During Veno-Arterial {ECMO}: A Simulation Study},
+  journal = {ASAIO Journal},
+  year    = {2019},
+  volume  = {65},
+  number  = {1},
+  pages   = {11--20},
+  doi     = {10.1097/MAT.0000000000000755},
+  note    = {PMC6325768; open access (CC BY 4.0). Verified: Europe PMC XML + Crossref. Role: source model / calibration anchor (consistency, not independent validation)}
+}
+
+@article{donker2019review,
+  author  = {Donker, Dirk W. and Brodie, Daniel and Henriques, Jos{\'e} P. S. and Broom{\'e}, Michael},
+  title   = {Left ventricular unloading during veno-arterial {ECMO}: a review of percutaneous and surgical unloading interventions},
+  journal = {Perfusion},
+  year    = {2019},
+  volume  = {34},
+  number  = {2},
+  pages   = {98--105},
+  doi     = {10.1177/0267659118794112},
+  note    = {PMC6378398; open access. Verified: Europe PMC XML + Crossref. Role: consistency (summarises the same simulation model)}
+}
+
+@article{broome2016,
+  author  = {Broom{\'e}, Michael and Donker, Dirk W.},
+  title   = {Individualized real-time clinical decision support to monitor cardiac loading during venoarterial {ECMO}},
+  journal = {Journal of Translational Medicine},
+  year    = {2016},
+  volume  = {14},
+  pages   = {4},
+  doi     = {10.1186/s12967-015-0760-1},
+  note    = {PMC4704258; open access. Verified: Europe PMC XML. Role: consistency (same model family, fitted to Ostadal 2015)}
+}
+
+@article{ostadal2015,
+  author  = {Ostadal, Petr and Mlcek, Mikulas and Kruger, Andreas and Hala, Pavel and Lacko, Stanislav and Mates, Martin and Vondrakova, Dagmar and Svoboda, Tomas and Hrachovina, Matej and Janotka, Marek and Psotova, Hana and Strunina, Svitlana and Kittnar, Otomar and Neuzil, Petr},
+  title   = {Increasing venoarterial extracorporeal membrane oxygenation flow negatively affects left ventricular performance in a porcine model of cardiogenic shock},
+  journal = {Journal of Translational Medicine},
+  year    = {2015},
+  volume  = {13},
+  pages   = {266},
+  doi     = {10.1186/s12967-015-0634-6},
+  note    = {PMC4537539; CC BY 4.0. Verified: Europe PMC XML. Role: consistency (CardioFlow calibration anchor; also used to fit the Broome/Donker model)}
+}
+
+@article{hala2020,
+  author  = {H{\'a}la, Pavel and Ml{\v{c}}ek, Mikul{\'a}{\v{s}} and O{\v{s}}{\v{t}}{\'a}dal, Petr and Popkov{\'a}, Michaela and Jan{\'a}k, David and Bou{\v{c}}ek, Tom{\'a}{\v{s}} and Lacko, Stanislav and Kudli{\v{c}}ka, Jaroslav and Neu{\v{z}}il, Petr and Kittnar, Otomar},
+  title   = {Increasing venoarterial extracorporeal membrane oxygenation flow puts higher demands on left ventricular work in a porcine model of chronic heart failure},
+  journal = {Journal of Translational Medicine},
+  year    = {2020},
+  volume  = {18},
+  number  = {1},
+  pages   = {75},
+  doi     = {10.1186/s12967-020-02250-x},
+  note    = {PMC7017528; open access. Verified: Europe PMC XML + Crossref. Role: INDEPENDENT ECMO-flow benchmark}
+}
+
+@article{mollerhelgestad2019,
+  author  = {M{\o}ller-Helgestad, Ole Kristian and Hyldebrandt, Janus A. and Banke, Ann and Rud, Charlotte S. and Udesen, Nanna L. J. and Linde, Louise and Okkels-Jensen, Lisette and Schmidt, Henrik and Ravn, Hanne B. and M{\o}ller, Jacob E.},
+  title   = {Impella {CP} or {VA-ECMO} in profound cardiogenic shock: left ventricular unloading and organ perfusion in a large animal model},
+  journal = {EuroIntervention},
+  year    = {2019},
+  volume  = {14},
+  number  = {15},
+  pages   = {e1585--e1592},
+  doi     = {10.4244/EIJ-D-18-00684},
+  note    = {Verified: Crossref. Full text free to read on the publisher site (not in the PMC open-access subset; Europe PMC isOpenAccess = N). Tables read from publisher HTML images. Role: INDEPENDENT Impella vs ECMO benchmark}
+}
+
+@article{frontiers2020impella,
+  author  = {Nix, Christoph and Ishikawa, Kiyotake and Meyns, Bart and Yasuda, Shota and Adriaenssens, Tom and Barth, Svenja and Zayat, Rashad and Leprince, Pascal and Lebreton, Guillaume},
+  title   = {Comparison of Hemodynamic Support by {Impella} vs. Peripheral Extra-Corporeal Membrane Oxygenation: A Porcine Model of Acute Myocardial Infarction},
+  journal = {Frontiers in Cardiovascular Medicine},
+  year    = {2020},
+  volume  = {7},
+  pages   = {99},
+  doi     = {10.3389/fcvm.2020.00099},
+  note    = {PMC7299088; open access. Verified: Europe PMC XML + Crossref. Funded by Abiomed Europe GmbH; two authors are Abiomed employees (paper's COI statement). Role: INDEPENDENT Impella vs ECMO benchmark}
+}
+
+@article{burkhoff2015,
+  author  = {Burkhoff, Daniel and Sayer, Gabriel and Doshi, Darshan and Uriel, Nir},
+  title   = {Hemodynamics of Mechanical Circulatory Support},
+  journal = {Journal of the American College of Cardiology},
+  year    = {2015},
+  volume  = {66},
+  number  = {23},
+  pages   = {2663--2674},
+  doi     = {10.1016/j.jacc.2015.10.017},
+  note    = {Verified: Crossref. Paywalled, not downloaded. Background only; never a numeric benchmark}
+}
+
+@article{thiele2023,
+  author  = {Thiele, Holger and Zeymer, Uwe and Akin, Ibrahim and Behnes, Michael and Rassaf, Tienush and others},
+  title   = {Extracorporeal Life Support in Infarct-Related Cardiogenic Shock},
+  journal = {New England Journal of Medicine},
+  year    = {2023},
+  volume  = {389},
+  number  = {14},
+  pages   = {1286--1297},
+  doi     = {10.1056/NEJMoa2307227},
+  note    = {ECLS-SHOCK. Verified: Crossref (35 authors). Background only}
+}
+
+@article{moller2024,
+  author  = {M{\o}ller, Jacob E. and Engstr{\o}m, Thomas and Jensen, Lisette O. and Eiskj{\ae}r, Hans and Mangner, Norman and others},
+  title   = {Microaxial Flow Pump or Standard Care in Infarct-Related Cardiogenic Shock},
+  journal = {New England Journal of Medicine},
+  year    = {2024},
+  volume  = {390},
+  number  = {15},
+  pages   = {1382--1393},
+  doi     = {10.1056/NEJMoa2312572},
+  note    = {DanGer Shock. Verified: Crossref (36 authors). Background only}
+}

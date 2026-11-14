@@ -1,0 +1,116 @@
+{
+  "script": "paper/scripts/v3_concordance.ts",
+  "benchmark_rows": 67,
+  "reflex_on": {
+    "consistency": {
+      "concordant": 35,
+      "total": 38
+    },
+    "independent": {
+      "concordant": 24,
+      "total": 29
+    },
+    "independent_significant_only": {
+      "concordant": 10,
+      "total": 11
+    },
+    "by_source": {
+      "donker2019simulation": {
+        "concordant": 21,
+        "total": 23
+      },
+      "donker2019review": {
+        "concordant": 3,
+        "total": 3
+      },
+      "broome2016": {
+        "concordant": 4,
+        "total": 4
+      },
+      "ostadal2015": {
+        "concordant": 7,
+        "total": 8
+      },
+      "hala2020": {
+        "concordant": 6,
+        "total": 8
+      },
+      "frontiers2020impella": {
+        "concordant": 7,
+        "total": 9
+      },
+      "mollerhelgestad2019": {
+        "concordant": 11,
+        "total": 12
+      }
+    },
+    "discordant": [
+      "DK-IABP-MAP: bench flat, model up (2.82 mmHg)",
+      "DK-RANK-PCWP-P5: bench down, model up (0.64 mmHg)",
+      "OS-stroke work: bench up, model down (-140.72 mmHg*mL)",
+      "HA-LV SV (EDV-ESV): bench up, model down (-8.10 mL)",
+      "HA-stroke work: bench up, model down (-144.54 mmHg*mL)",
+      "NX-ECMO-mPAP: bench down, model up (4.59 mmHg)",
+      "NX-ECMO-EDV: bench down, model up (20.20 mL)",
+      "MH-IMP-LV peak pressure: bench up, model down (-11.48 mmHg)"
+    ],
+    "bounds_violated": []
+  },
+  "reflex_off": {
+    "consistency": {
+      "concordant": 35,
+      "total": 38
+    },
+    "independent": {
+      "concordant": 24,
+      "total": 29
+    },
+    "independent_significant_only": {
+      "concordant": 10,
+      "total": 11
+    },
+    "by_source": {
+      "donker2019simulation": {
+        "concordant": 21,
+        "total": 23
+      },
+      "donker2019review": {
+        "concordant": 3,
+        "total": 3
+      },
+      "broome2016": {
+        "concordant": 4,
+        "total": 4
+      },
+      "ostadal2015": {
+        "concordant": 7,
+        "total": 8
+      },
+      "hala2020": {
+        "concordant": 6,
+        "total": 8
+      },
+      "frontiers2020impella": {
+        "concordant": 7,
+        "total": 9
+      },
+      "mollerhelgestad2019": {
+        "concordant": 11,
+        "total": 12
+      }
+    },
+    "discordant": [
+      "DK-IABP-MAP: bench flat, model up (6.77 mmHg)",
+      "DK-RANK-PCWP-P5: bench down, model up (0.18 mmHg)",
+      "OS-stroke work: bench up, model down (-605.08 mmHg*mL)",
+      "HA-LV SV (EDV-ESV): bench up, model down (-17.19 mL)",
+      "HA-stroke work: bench up, model down (-622.75 mmHg*mL)",
+      "NX-ECMO-mPAP: bench down, model up (8.91 mmHg)",
+      "NX-ECMO-EDV: bench down, model up (36.07 mL)",
+      "MH-IMP-LV peak pressure: bench up, model down (-8.72 mmHg)"
+    ],
+    "bounds_violated": [
+      "DR-IMP-PCWP: model -10.42 mmHg"
+    ]
+  }
+}

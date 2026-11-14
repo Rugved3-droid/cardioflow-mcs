@@ -1,18 +1,32 @@
-condition,variable,units,model_value,ref_low,ref_high,ref_source,verdict
-cardiogenic_shock,MAP,mmHg,61.92167371,,,,PENDING: no reference range supplied
-cardiogenic_shock,SBP,mmHg,73.34373312,,,,PENDING: no reference range supplied
-cardiogenic_shock,DBP,mmHg,52.91501270,,,,PENDING: no reference range supplied
-cardiogenic_shock,CO,L/min,2.983282493,,,,PENDING: no reference range supplied
-cardiogenic_shock,SV,mL,29.83282493,,,,PENDING: no reference range supplied
-cardiogenic_shock,LVEDP,mmHg,20.02049572,,,,PENDING: no reference range supplied
-cardiogenic_shock,LVEDV,mL,187.7843753,,,,PENDING: no reference range supplied
-cardiogenic_shock,LVESV,mL,159.2036387,,,,PENDING: no reference range supplied
-cardiogenic_shock,EF_native,%,15.88674504,,,,PENDING: no reference range supplied
-cardiogenic_shock,LV_emptying_fraction,%,15.88605049,,,,PENDING: no reference range supplied
-cardiogenic_shock,native_CO,L/min,2.983282493,,,,PENDING: no reference range supplied
-cardiogenic_shock,AV_open_fraction,fraction of cycle,0.2730555556,,,,PENDING: no reference range supplied
-cardiogenic_shock,PCWP_equiv_meanLAP,mmHg,20.23815699,,,,PENDING: no reference range supplied
-cardiogenic_shock,RAP_equiv_meanSVpressure,mmHg,13.48093037,,,,PENDING: no reference range supplied
-cardiogenic_shock,mPAP,mmHg,25.07963632,,,,PENDING: no reference range supplied
-cardiogenic_shock,SVR_equiv,WU,15.81975412,,,,PENDING: no reference range supplied
-cardiogenic_shock,HR,bpm,100,,,,PENDING: no reference range supplied
+condition,variable,units,model_value,ref_low,ref_high,ref_source,species,verdict
+cardiogenic_shock,MAP,mmHg,61.92167371,61,61,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = 0.9 mmHg (2%)
+cardiogenic_shock,SBP,mmHg,73.34373312,44.35,75.65,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,DBP,mmHg,52.91501270,,,,,no reference value in the benchmark sources
+cardiogenic_shock,CO,L/min,2.983282493,3.1,3.1,"donker2019simulation SDC Appendix: cardiac output ""decreased from 7.0 L/min to 3.1 L/min""",human (simulation),model - source = -0.1 L/min (-4%)
+cardiogenic_shock,CO,L/min,2.983282493,2.05,3.57,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,CO,L/min,2.983282493,2.01,3.79,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,SV,mL,29.83282493,31,31,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = -1.2 mL (-4%)
+cardiogenic_shock,SV,mL,29.83282493,27.88,68.12,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,SV,mL,29.83282493,6.28,95.72,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,LVEDP,mmHg,20.02049572,14.07,20.33,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,LVEDP,mmHg,20.02049572,2.53,11.47,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): above mean +- SD
+cardiogenic_shock,LVEDV,mL,187.7843753,158,158,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = 29.8 mL (19%)
+cardiogenic_shock,LVEDV,mL,187.7843753,69.51,154.49,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): above mean +- SD
+cardiogenic_shock,LVEDV,mL,187.7843753,130.86,247.14,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,LVESV,mL,159.2036387,127,127,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = 32.2 mL (25%)
+cardiogenic_shock,LVESV,mL,159.2036387,39.4,88.6,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): above mean +- SD
+cardiogenic_shock,LVESV,mL,159.2036387,100.99,177.01,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,EF_native,%,15.88674504,20,20,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = -4.1 % (-21%)
+cardiogenic_shock,EF_native,%,15.88674504,36.29,49.71,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): below mean +- SD
+cardiogenic_shock,EF_native,%,15.88674504,9.35,40.65,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,LV_emptying_fraction,%,15.88605049,,,,,no reference value in the benchmark sources
+cardiogenic_shock,native_CO,L/min,2.983282493,,,,,no reference value in the benchmark sources
+cardiogenic_shock,AV_open_fraction,fraction of cycle,0.2730555556,,,,,no reference value in the benchmark sources
+cardiogenic_shock,PCWP_equiv_meanLAP,mmHg,20.23815699,30,30,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = -9.8 mmHg (-33%)
+cardiogenic_shock,RAP_equiv_meanSVpressure,mmHg,13.48093037,11,11,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = 2.5 mmHg (23%)
+cardiogenic_shock,RAP_equiv_meanSVpressure,mmHg,13.48093037,9.53,18.47,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,mPAP,mmHg,25.07963632,33,33,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = -7.9 mmHg (-24%)
+cardiogenic_shock,SVR_equiv,WU,15.81975412,,,,,no reference value in the benchmark sources
+cardiogenic_shock,HR,bpm,100,100,100,donker2019simulation Table 1 row 2 (LV heart failure),human (simulation),model - source = 0.0 bpm (0%)
+cardiogenic_shock,HR,bpm,100,85.06,102.94,"ostadal2015 Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,context only (porcine): inside mean +- SD
+cardiogenic_shock,HR,bpm,100,51.81,150.19,hala2020 Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,context only (porcine): inside mean +- SD

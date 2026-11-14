@@ -1,1 +1,6 @@
 results/_log_*.txt
+# Not open access / third-party templates: kept locally, not redistributed in the public repo
+benchmarks/mollerhelgestad2019_landing.html
+benchmarks/text/mollerhelgestad2019.txt
+benchmarks/img/mh_*
+Visual_Abstract_Templates.pptx

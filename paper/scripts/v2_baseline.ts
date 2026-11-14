@@ -9,9 +9,8 @@
  * veins and LA into one compliance, so this is mean LAP). SVR-equivalent = beat-mean
  * reflex SVR in Wood units (mmHg*s/mL x 16.6667).
  *
- * If paper/benchmarks/reference_ranges.csv exists (columns: variable,condition,low,high,
- * units,source,page_or_table), each value is classified in/out of range. Otherwise the
- * comparison column reads PENDING.
+ * Reference values: paper/benchmarks/reference_ranges.csv (built by build_benchmarks.py from the
+ * downloaded sources; columns variable,condition,low,high,units,source,page_or_table,species,note).
  *
  * Output: paper/results/v2_baseline.csv
  */
@@ -42,27 +41,41 @@ const vals: [string, string, number][] = [
   ['HR', 'bpm', sim.p.hr],
 ];
 const refPath = join(import.meta.dirname, '..', 'benchmarks', 'reference_ranges.csv');
+function parseLine(l: string): string[] {
+  const out: string[] = [];
+  let cur = '', q = false;
+  for (let i = 0; i < l.length; i++) {
+    const c = l[i];
+    if (q) { if (c === '"' && l[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
+    else if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
 let ref: Record<string, string>[] = [];
 if (existsSync(refPath)) {
   const [h, ...ls] = readFileSync(refPath, 'utf8').trim().split(/\r?\n/);
-  const cols = h.split(',').map((c) => c.trim());
-  ref = ls.map((l) => Object.fromEntries(l.split(',').map((v, i) => [cols[i], v.trim()])));
+  const cols = parseLine(h).map((c) => c.trim());
+  ref = ls.map((l) => Object.fromEntries(parseLine(l).map((v, i) => [cols[i], v.trim()])));
 }
+/**
+ * Verdict rules (author instruction 2026-11-14): reference values come only from the shock / LV-failure
+ * baselines of the downloaded benchmark papers. Human-simulation sources (Donker 2019) give a point value:
+ * the verdict reports model minus source. Porcine sources give mean +- SD: the in/out classification is
+ * shown as CONTEXT ONLY, because absolute values are not compared across species.
+ */
 const rows: Record<string, unknown>[] = [];
-for (const condition of ['cardiogenic_shock']) {
-  for (const [name, units, v] of vals) {
-    const r = ref.find((x) => x.variable === name && x.condition === condition);
-    rows.push({
-      condition,
-      variable: name,
-      units,
-      model_value: v,
-      ref_low: r?.low ?? '',
-      ref_high: r?.high ?? '',
-      ref_source: r ? `${r.source} ${r.page_or_table ?? ''}`.trim() : '',
-      verdict: !r ? 'PENDING: no reference range supplied' : v >= Number(r.low) && v <= Number(r.high) ? 'in range' : 'OUT OF RANGE',
-    });
+for (const [name, units, v] of vals) {
+  const rs = ref.filter((x) => x.variable === name && x.condition === 'cardiogenic_shock');
+  if (!rs.length) rows.push({ condition: 'cardiogenic_shock', variable: name, units, model_value: v, ref_low: '', ref_high: '', ref_source: '', species: '', verdict: 'no reference value in the benchmark sources' });
+  for (const r of rs) {
+    const lo = Number(r.low), hi = Number(r.high);
+    const verdict = r.species.startsWith('human')
+      ? `model - source = ${(v - lo).toFixed(1)} ${units} (${(100 * (v / lo - 1)).toFixed(0)}%)`
+      : `context only (porcine): ${v >= lo && v <= hi ? 'inside' : v < lo ? 'below' : 'above'} mean +- SD`;
+    rows.push({ condition: 'cardiogenic_shock', variable: name, units, model_value: v, ref_low: r.low, ref_high: r.high,
+      ref_source: `${r.source} ${r.page_or_table}`, species: r.species, verdict });
   }
 }
 writeCsv('v2_baseline.csv', rows);
-console.table(rows);
+console.table(rows.map((r) => ({ variable: r.variable, model: Number(r.model_value).toFixed(1), lo: r.ref_low, hi: r.ref_high, src: String(r.ref_source).split(' ')[0], verdict: r.verdict })));

@@ -1,0 +1,4 @@
+comp_id,source_key,class,species,mode,benchmark_contrast,model_contrast,outcome,model_metric,bench_base,bench_int,units,bench_direction,significant,bound_low,bound_high,location,note,bench_delta,bench_pct
+DR-IABP-PCWP,donker2019review,consistency,human (review),delta,"IABP added to VA ECMO: PCWP decrease reported ""maximally 5 mmHg""",E4+IABP>E4,PCWP,lapMean,,,mmHg,down,NA,-5,0,"Section on IABP, XML body text (Perfusion 2019;34:98-105)",magnitude bound,,
+DR-IMP-PCWP,donker2019review,consistency,human (review),delta,Impella added to VA ECMO: PCWP reduction up to 10 mmHg as a function of flow,E4+P8>E4,PCWP,lapMean,,,mmHg,down,NA,-10,0,"Section on Impella, XML body text",magnitude bound,,
+DR-IMP-LVV,donker2019review,consistency,human (review),delta,Impella added to VA ECMO: LV volume reduction up to 20%,E4+P8>E4,LVEDV,lvedv,,,%,down,NA,-20,0,"Section on Impella, XML body text",magnitude bound on percent change,,

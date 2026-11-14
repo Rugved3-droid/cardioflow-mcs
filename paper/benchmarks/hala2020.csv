@@ -1,0 +1,9 @@
+comp_id,source_key,class,species,mode,benchmark_contrast,model_contrast,outcome,model_metric,bench_base,bench_int,units,bench_direction,significant,bound_low,bound_high,location,note,bench_delta,bench_pct
+HA-LV peak pressure,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LV peak pressure,lvPeak,49,73,mmHg,up,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),24.0,48.98
+HA-LVEDP,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LVEDP,lvedp,7,15,mmHg,up,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),8.0,114.286
+HA-LVESV,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LVESV,lvesv,139,167,mL,up,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),28.0,20.144
+HA-LVEDV,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LVEDV,lvedv,189,218,mL,up,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),29.0,15.344
+HA-LV SV (EDV-ESV),hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LV SV (EDV-ESV),emptyingSv,51,52,mL,up,N,,,Table 1 (XML Tab1),"direction and % only (cross-species); overall P=0.03 but non-monotone (peak at EBF 3), net +2%",1.0,1.961
+HA-LVEF,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,LVEF,efEmptying,25,21,%,down,N,,,Table 1 (XML Tab1),direction and % only (cross-species); P=0.18,-4.0,-16.0
+HA-stroke work,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,stroke work,strokeWork,1434,1892,mmHg*mL,up,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),458.0,31.939
+HA-CVP,hala2020,independent,porcine,delta,EBF 0 (0.3 L/min) -> 5 L/min,E5>E0.3,CVP,rapMean,14,8,mmHg,down,Y,,,Table 1 (XML Tab1),direction and % only (cross-species),-6.0,-42.857

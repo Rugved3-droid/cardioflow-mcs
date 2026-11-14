@@ -1,0 +1,67 @@
+source,class,flow_Lpm,variable,value,location
+ostadal2015,consistency,1,LVESV,64,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,LVESV,70,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,LVESV,74,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,LVESV,78,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,LVESV,83,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,1,LVEDV,112,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,LVEDV,115,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,LVEDV,116,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,LVEDV,119,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,LVEDV,123,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,1,LVEDP,17.2,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,LVEDP,18.2,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,LVEDP,18.6,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,LVEDP,18.9,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,LVEDP,19.0,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,1,SV,48,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,SV,45,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,SV,42,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,SV,41,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,SV,40,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,1,SBP,60,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,SBP,72,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,SBP,81,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,SBP,89,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,SBP,97,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,1,EF,43,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,2,EF,39,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,3,EF,36,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,4,EF,34,"Results text, Fig. 3 (XML body text)"
+ostadal2015,consistency,5,EF,32,"Results text, Fig. 3 (XML body text)"
+hala2020,independent,0.3,LVEDP,7,Table 1 (XML Tab1)
+hala2020,independent,1,LVEDP,8,Table 1 (XML Tab1)
+hala2020,independent,2,LVEDP,10,Table 1 (XML Tab1)
+hala2020,independent,3,LVEDP,11,Table 1 (XML Tab1)
+hala2020,independent,4,LVEDP,13,Table 1 (XML Tab1)
+hala2020,independent,5,LVEDP,15,Table 1 (XML Tab1)
+hala2020,independent,0.3,LVESV,139,Table 1 (XML Tab1)
+hala2020,independent,1,LVESV,143,Table 1 (XML Tab1)
+hala2020,independent,2,LVESV,148,Table 1 (XML Tab1)
+hala2020,independent,3,LVESV,152,Table 1 (XML Tab1)
+hala2020,independent,4,LVESV,164,Table 1 (XML Tab1)
+hala2020,independent,5,LVESV,167,Table 1 (XML Tab1)
+hala2020,independent,0.3,LVEDV,189,Table 1 (XML Tab1)
+hala2020,independent,1,LVEDV,194,Table 1 (XML Tab1)
+hala2020,independent,2,LVEDV,203,Table 1 (XML Tab1)
+hala2020,independent,3,LVEDV,209,Table 1 (XML Tab1)
+hala2020,independent,4,LVEDV,217,Table 1 (XML Tab1)
+hala2020,independent,5,LVEDV,218,Table 1 (XML Tab1)
+hala2020,independent,0.3,SV,51,Table 1 (XML Tab1)
+hala2020,independent,1,SV,51,Table 1 (XML Tab1)
+hala2020,independent,2,SV,56,Table 1 (XML Tab1)
+hala2020,independent,3,SV,59,Table 1 (XML Tab1)
+hala2020,independent,4,SV,55,Table 1 (XML Tab1)
+hala2020,independent,5,SV,52,Table 1 (XML Tab1)
+hala2020,independent,0.3,EF,25,Table 1 (XML Tab1)
+hala2020,independent,1,EF,24,Table 1 (XML Tab1)
+hala2020,independent,2,EF,26,Table 1 (XML Tab1)
+hala2020,independent,3,EF,27,Table 1 (XML Tab1)
+hala2020,independent,4,EF,23,Table 1 (XML Tab1)
+hala2020,independent,5,EF,21,Table 1 (XML Tab1)
+hala2020,independent,0.3,LVPP,49,Table 1 (XML Tab1)
+hala2020,independent,1,LVPP,55,Table 1 (XML Tab1)
+hala2020,independent,2,LVPP,61,Table 1 (XML Tab1)
+hala2020,independent,3,LVPP,66,Table 1 (XML Tab1)
+hala2020,independent,4,LVPP,74,Table 1 (XML Tab1)
+hala2020,independent,5,LVPP,73,Table 1 (XML Tab1)

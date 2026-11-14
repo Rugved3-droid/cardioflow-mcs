@@ -1,0 +1,27 @@
+variable,condition,low,high,units,source,page_or_table,species,note
+MAP,cardiogenic_shock,61,61,mmHg,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+SV,cardiogenic_shock,31,31,mL,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+LVEDV,cardiogenic_shock,158,158,mL,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+LVESV,cardiogenic_shock,127,127,mL,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+EF_native,cardiogenic_shock,20,20,%,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+PCWP_equiv_meanLAP,cardiogenic_shock,30,30,mmHg,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+RAP_equiv_meanSVpressure,cardiogenic_shock,11,11,mmHg,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+mPAP,cardiogenic_shock,33,33,mmHg,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+HR,cardiogenic_shock,100,100,bpm,donker2019simulation,Table 1 row 2 (LV heart failure),human (simulation),"point value from the source model (consistency, not validation)"
+CO,cardiogenic_shock,3.1,3.1,L/min,donker2019simulation,"SDC Appendix: cardiac output ""decreased from 7.0 L/min to 3.1 L/min""",human (simulation),point value
+SBP,cardiogenic_shock,44.35,75.65,mmHg,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+CO,cardiogenic_shock,2.05,3.57,L/min,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+EF_native,cardiogenic_shock,36.29,49.71,%,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+HR,cardiogenic_shock,85.06,102.94,bpm,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+LVEDP,cardiogenic_shock,14.07,20.33,mmHg,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+LVEDV,cardiogenic_shock,69.51,154.49,mL,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+LVESV,cardiogenic_shock,39.4,88.6,mL,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+SV,cardiogenic_shock,27.88,68.12,mL,ostadal2015,"Results (XML body text) and Fig. 3, EBF 1 L/min",porcine,"mean +- SD (SEM x sqrt 5); measured on ECMO 1 L/min; context only, no cross-species verdict"
+LVEDP,cardiogenic_shock,2.53,11.47,mmHg,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+LVEDV,cardiogenic_shock,130.86,247.14,mL,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+LVESV,cardiogenic_shock,100.99,177.01,mL,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+SV,cardiogenic_shock,6.28,95.72,mL,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+EF_native,cardiogenic_shock,9.35,40.65,%,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+HR,cardiogenic_shock,51.81,150.19,bpm,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+RAP_equiv_meanSVpressure,cardiogenic_shock,9.53,18.47,mmHg,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only
+CO,cardiogenic_shock,2.01,3.79,L/min,hala2020,Table 1 EBF 0 (XML Tab1); CO from Results text,porcine,mean +- SD (SEM x sqrt 5); chronic pacing-induced HF at EBF 0.3 L/min; context only

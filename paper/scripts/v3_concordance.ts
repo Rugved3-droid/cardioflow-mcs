@@ -1,17 +1,30 @@
 /**
- * V3 concordance: joins benchmark directions (paper/benchmarks/device_benchmarks.csv,
- * extracted from the supplied PDFs) with model directions (paper/results/v3_model_directions.csv).
+ * V3 concordance against the downloaded benchmarks.
  *
- * Rows with read_quality UNCLEAR are listed but excluded from the concordance count.
- * Rows from sources that were used to calibrate the model (calibration_overlap = yes) are
- * counted separately and never pooled into the independent concordance figure.
+ * Reads paper/benchmarks/device_benchmarks.csv (written by build_benchmarks.py from the
+ * downloaded full texts), runs every model arm it names on the shipped patient (baroreflex ON,
+ * primary) and with the reflex OFF (secondary; Donker's model has no reflexes), and classifies each
+ * comparison.
  *
- * Output: paper/results/v3_concordance.csv, v3_concordance_summary.json
- * If the benchmark CSV is absent, writes a PENDING summary and exits 0.
+ * Rules (fixed before looking at the results):
+ *  - delta mode: model change = arm1 - arm2 (e.g. E4 minus none). Model direction is 'flat' if
+ *    |relative change| < 1 %. A benchmark 'flat' is concordant if |model change| < 1 unit (mmHg).
+ *  - rank modes: model value = change(pair 1) - change(pair 2), absolute (rank_abs) or in %
+ *    (rank_pct); direction 'down' if < 0.
+ *  - Concordant = model direction equals benchmark direction. Magnitude is reported, not scored:
+ *    relative magnitude = model % change / benchmark % change (delta) or model diff / benchmark
+ *    diff (rank). Where the source states a bound, `within_bound` reports it separately.
+ *  - Animal data: direction and % only; absolute values are never compared across species.
+ *  - Counts are reported separately for class = consistency (Donker, Donker review, Broome,
+ *    Ostadal: calibration anchors or the source model) and class = independent (Hala, Nix,
+ *    Moller-Helgestad). They are never pooled.
+ *
+ * Output: paper/results/v3_concordance.csv, v3_concordance_summary.json, v3_arms.csv
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { RESULTS, writeCsv, writeJson } from '../runner/io';
+import { runScenario, settingsOf, SHOCK_PATIENT, efMetrics, type BeatMetrics } from '../runner/core';
+import { writeCsv, writeJson } from '../runner/io';
 
 function readCsv(p: string): Record<string, string>[] {
   const lines = readFileSync(p, 'utf8').trim().split(/\r?\n/);
@@ -30,37 +43,108 @@ function readCsv(p: string): Record<string, string>[] {
   return lines.slice(1).map((l) => Object.fromEntries(parse(l).map((v, i) => [cols[i], v])));
 }
 
-const benchPath = join(import.meta.dirname, '..', 'benchmarks', 'device_benchmarks.csv');
-if (!existsSync(benchPath)) {
-  writeJson('v3_concordance_summary.json', { status: 'PENDING', reason: 'paper/benchmarks/device_benchmarks.csv not present (benchmark PDFs not yet supplied)' });
-  console.log('PENDING: no benchmark CSV');
-  process.exit(0);
+const bench = readCsv(join(import.meta.dirname, '..', 'benchmarks', 'device_benchmarks.csv'));
+
+function settingsForArm(arm: string) {
+  if (arm === 'none') return settingsOf({});
+  const s: Record<string, unknown> = {};
+  for (const part of arm.split('+')) {
+    if (part === 'IABP') s.iabpOn = true;
+    else if (part.startsWith('E')) s.ecmoFlowLpm = Number(part.slice(1));
+    else if (part.startsWith('P')) s.impellaLevel = Number(part.slice(1));
+    else throw new Error(`bad arm ${arm}`);
+  }
+  return settingsOf(s);
 }
-const bench = readCsv(benchPath);
-const model = readCsv(join(RESULTS, 'v3_model_directions.csv'));
-const norm = (d: string) => (/^(strictly )?up|increase|rise|higher/i.test(d) ? 'up' : /^(strictly )?down|decrease|fall|lower/i.test(d) ? 'down' : /no change|unchanged|ns/i.test(d) ? 'no change' : d);
-const rows = bench.map((b) => {
-  const m = model.find((x) => x.comparison === b.comparison_id && x.outcome === b.outcome);
-  const md = m ? norm(m.model_direction) : 'NOT RUN';
-  const bd = norm(b.reported_direction);
-  const usable = b.read_quality !== 'UNCLEAR' && !!m;
+
+type Metrics = Record<string, number>;
+function runArm(arm: string, reflex: boolean): Metrics {
+  let cur = -Infinity, lastPeak = NaN;
+  const sim = runScenario(settingsForArm(arm), {
+    patient: { ...SHOCK_PATIENT, baroEnabled: reflex },
+    onTick: (s) => {
+      if (s.state.tickInBeat === 0) { lastPeak = cur; cur = -Infinity; }
+      cur = Math.max(cur, s.last.pLv);
+    },
+  });
+  const m: BeatMetrics = sim.lastBeat!;
   return {
-    ...b,
-    model_direction: md,
-    model_pct_change: m?.pct_change ?? '',
-    model_value_from: m?.value_from ?? '',
-    model_value_to: m?.value_to ?? '',
-    concordant: usable ? (md === bd ? 'yes' : 'no') : 'excluded',
+    map: m.map, sbp: m.sbp, lapMean: m.lapMean, lvedp: m.lvedp, lvedv: m.lvedv, lvesv: m.lvesv,
+    nativeSv: m.nativeSv, emptyingSv: (m.lvedv * m.ef) / 100, efEmptying: m.ef, efNative: efMetrics(m).efNative,
+    pva: m.pva, strokeWork: m.strokeWork, nativeCoLpm: m.nativeCoLpm, rapMean: m.rapMean, paMean: m.paMean,
+    lvPeak: lastPeak, impellaLpm: m.impellaLpm, ecmoLpm: m.ecmoLpm, avOpen: m.avOpenFractionRaw,
   };
-});
-writeCsv('v3_concordance.csv', rows);
-const count = (filter: (r: (typeof rows)[number]) => boolean) => {
-  const u = rows.filter((r) => r.concordant !== 'excluded' && filter(r));
-  return { concordant: u.filter((r) => r.concordant === 'yes').length, total: u.length };
+}
+
+const arms = new Set<string>();
+for (const b of bench) for (const pair of b.model_contrast.split('|')) for (const a of pair.split('>')) arms.add(a);
+const results: Record<'on' | 'off', Record<string, Metrics>> = { on: {}, off: {} };
+const armRows: Record<string, unknown>[] = [];
+for (const reflex of ['on', 'off'] as const) {
+  for (const a of [...arms].sort()) {
+    results[reflex][a] = runArm(a, reflex === 'on');
+    armRows.push({ arm: a, reflex, ...results[reflex][a] });
+  }
+}
+writeCsv('v3_arms.csv', armRows);
+
+const dirOf = (x: number, pct: number) => (Math.abs(pct) < 1 ? 'flat' : x > 0 ? 'up' : 'down');
+const out: Record<string, unknown>[] = [];
+for (const reflex of ['on', 'off'] as const) {
+  const R = results[reflex];
+  for (const b of bench) {
+    const k = b.model_metric;
+    const change = (pair: string) => {
+      const [a1, a2] = pair.split('>');
+      const v1 = R[a1][k], v2 = R[a2][k];
+      return { v1, v2, d: v1 - v2, pct: v2 !== 0 ? 100 * (v1 / v2 - 1) : NaN };
+    };
+    const common = { reflex, comp_id: b.comp_id, class: b.class, source_key: b.source_key, species: b.species, outcome: b.outcome,
+      benchmark_contrast: b.benchmark_contrast, model_contrast: b.model_contrast, model_metric: k, units: b.units,
+      bench_base: b.bench_base, bench_int: b.bench_int, bench_delta: b.bench_delta, bench_direction: b.bench_direction, significant: b.significant };
+    if (b.mode === 'delta') {
+      const c = change(b.model_contrast);
+      let modelDir = dirOf(c.d, c.pct);
+      if (b.bench_direction === 'flat') modelDir = Math.abs(c.d) < 1 ? 'flat' : c.d > 0 ? 'up' : 'down';
+      let within = '';
+      if (b.bound_low !== '') {
+        const x = b.units === '%' ? c.pct : c.d;
+        within = x >= Number(b.bound_low) && x <= Number(b.bound_high) ? 'Y' : 'N';
+      }
+      out.push({ ...common, bench_pct: b.bench_pct, model_from: c.v2, model_to: c.v1, model_delta: c.d, model_pct: c.pct, model_direction: modelDir,
+        concordant: modelDir === b.bench_direction ? 'Y' : 'N', relative_magnitude: b.bench_pct !== '' ? c.pct / Number(b.bench_pct) : '',
+        within_bound: within, location: b.location, note: b.note });
+    } else {
+      const [p1, p2] = b.model_contrast.split('|');
+      const c1 = change(p1), c2 = change(p2);
+      const pctMode = b.mode === 'rank_pct';
+      const v = pctMode ? c1.pct - c2.pct : c1.d - c2.d;
+      const modelDir = Math.abs(v) < 1e-9 ? 'flat' : v > 0 ? 'up' : 'down';
+      const bd = Number(b.bench_delta);
+      out.push({ ...common, bench_pct: '', model_from: pctMode ? c2.pct : c2.d, model_to: pctMode ? c1.pct : c1.d, model_delta: v, model_pct: '',
+        model_direction: modelDir, concordant: modelDir === b.bench_direction ? 'Y' : 'N',
+        relative_magnitude: Number.isFinite(bd) && bd !== 0 ? v / bd : '', within_bound: '', location: b.location, note: b.note });
+    }
+  }
+}
+writeCsv('v3_concordance.csv', out);
+
+const count = (f: (r: Record<string, unknown>) => boolean) => {
+  const u = out.filter(f);
+  return { concordant: u.filter((r) => r.concordant === 'Y').length, total: u.length };
 };
-writeJson('v3_concordance_summary.json', {
-  script: 'paper/scripts/v3_concordance.ts',
-  independent: count((r) => r.calibration_overlap !== 'yes'),
-  calibration_sources_only: count((r) => r.calibration_overlap === 'yes'),
-  excluded_unclear_or_not_run: rows.filter((r) => r.concordant === 'excluded').length,
-});
+const summary: Record<string, unknown> = { script: 'paper/scripts/v3_concordance.ts', benchmark_rows: bench.length };
+for (const reflex of ['on', 'off']) {
+  summary[`reflex_${reflex}`] = {
+    consistency: count((r) => r.reflex === reflex && r.class === 'consistency'),
+    independent: count((r) => r.reflex === reflex && r.class === 'independent'),
+    independent_significant_only: count((r) => r.reflex === reflex && r.class === 'independent' && r.significant === 'Y'),
+    by_source: Object.fromEntries([...new Set(bench.map((b) => b.source_key))].map((s) => [s, count((r) => r.reflex === reflex && r.source_key === s)])),
+    discordant: out.filter((r) => r.reflex === reflex && r.concordant === 'N')
+      .map((r) => `${r.comp_id}: bench ${r.bench_direction}, model ${r.model_direction} (${Number(r.model_delta).toFixed(2)} ${r.units})`),
+    bounds_violated: out.filter((r) => r.reflex === reflex && r.within_bound === 'N')
+      .map((r) => `${r.comp_id}: model ${Number(r.units === '%' ? r.model_pct : r.model_delta).toFixed(2)} ${r.units}`),
+  };
+}
+writeJson('v3_concordance_summary.json', summary);
+console.log(JSON.stringify(summary, null, 1));
