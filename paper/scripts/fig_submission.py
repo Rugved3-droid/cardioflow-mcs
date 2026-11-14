@@ -119,7 +119,7 @@ fig.tight_layout(rect=[0, 0.12, 1, 1])
 fig.legend(handles, labels, loc='lower center', ncol=2, frameon=False, bbox_to_anchor=(0.5, 0.0))
 save(fig, 'Figure2', 1200)
 
-# ---------------- Figure 3: Impella P2-P8 dose-response on ECMO 4 vs IABP
+# ---------------- Figure 4: Impella P2-P8 dose-response on ECMO 4 vs IABP
 d = pd.read_csv(R / 'm2_impella_vs_iabp.csv')
 on = d[d.reflex == 'on']; off = d[d.reflex == 'off']
 lv = [f'ECMO4+P{i}' for i in range(2, 9)]
@@ -150,9 +150,9 @@ a.legend(frameon=False, loc='center right', fontsize=11, bbox_to_anchor=(1.0, 0.
 axs[0, 1].legend(frameon=False, loc='lower left', fontsize=11)
 for a in axs.flat: a.set_xticks(x)
 fig.tight_layout()
-save(fig, 'Figure3', 1200)
+save(fig, 'Figure4', 1200)
 
-# ---------------- Figure 4: PV loops (reflex on)
+# ---------------- Figure 3: PV loops (reflex on)
 pv = pd.read_csv(R / 'v3_pv_loops.csv')
 fig, axs = plt.subplots(1, 2, figsize=(W, 4.6), sharey=True)
 styles = [('-', 2.2), ('--', 1.8), ('-.', 1.8), (':', 2.4)]
@@ -165,4 +165,4 @@ for a, ids, labels, title, letter in [
     a.set_xlabel('LV volume (mL)'); a.set_title(title, loc='left'); panel(a, letter); a.legend(frameon=False, fontsize=11, loc='upper center', bbox_to_anchor=(0.5, -0.22), ncol=2)
 axs[0].set_ylabel('LV pressure (mmHg)')
 fig.tight_layout()
-save(fig, 'Figure4', 1200)
+save(fig, 'Figure3', 1200)

@@ -128,7 +128,7 @@ rows = [
      f"EDV {dk.loc['LVEDV','model_value']:.0f} mL (+{100*(dk.loc['LVEDV','model_value']/dk.loc['LVEDV','ref_low']-1):.0f}%); mean LAP {dk.loc['PCWP_equiv_meanLAP','model_value']:.0f} mmHg",
      'Different parameterization of the same phenotype; mean LAP is CardioFlow\'s PCWP surrogate'],
     ['Impella vs IABP ranking at P5 on ECMO 4', 'Donker (C)', 'Impella 2.5 L/min unloads more (ΔPCWP −2 vs −1 mmHg)',
-     f"P5 (2.2 L/min) {g('DK-RANK-PCWP-P5','model_to'):.2f} vs IABP {g('DK-RANK-PCWP-P5','model_from'):.2f} mmHg", 'Dose-dependent crossover (Figure 3): concordant from P6 (2.6 L/min) upward'],
+     f"P5 (2.2 L/min) {g('DK-RANK-PCWP-P5','model_to'):.2f} vs IABP {g('DK-RANK-PCWP-P5','model_from'):.2f} mmHg", 'Dose-dependent crossover (Figure 4): concordant from P6 (2.6 L/min) upward'],
 ]
 d = new_doc(landscape=True)
 caption(d, 'Table 3. Disagreements between the model and benchmarks')
