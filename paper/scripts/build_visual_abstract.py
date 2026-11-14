@@ -40,7 +40,12 @@ def fill(shape, lines, size=14, bold_first=False):
             for r in list(p.runs)[1:]: r._r.getparent().remove(r._r)
             r = p.runs[0] if p.runs else p.add_run()
         else:
-            p.level = first.level; r = p.add_run()
+            p.level = first.level
+            if first._p.pPr is not None:  # carry the template bullet/indent to every detail line
+                old = p._p.pPr
+                if old is not None: p._p.remove(old)
+                p._p.insert(0, copy.deepcopy(first._p.pPr))
+            r = p.add_run()
         r.text = line; r.font.size = Pt(size)
         if bold_first and i == 0: r.font.bold = True
 

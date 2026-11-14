@@ -70,6 +70,13 @@ parts.append('# Figure S2. Full screen of the paired-state display\n'
              'Released application (release/CardioFlow-MCS.html) in compare mode after settling: pane A, VA-ECMO 4 L/min; pane B, '
              'VA-ECMO 4 L/min + Impella P5. Captured by `paper/scripts/screenshot_twin.ts`; Figure 1B is a crop of the central B − A column.\n\n'
              f'<img src="data:image/png;base64,{shot}" style="width:100%">\n')
+parts.append('# Video 1. Demonstration of the paired-state simulator\n'
+             'Supplemental Digital Content Video 1 (SDC_Video_1.mp4; 4 min 55 s; also at https://youtu.be/sHLgmfZxZZM). Screen recording of the released '
+             'application (release/CardioFlow-MCS.html, identical to the file at tag v1.0-asaio) driven by a scripted tour: cardiogenic shock without support; '
+             'VA-ECMO 4 L/min in side-by-side compare mode; Impella, IABP and VA-ECMO with Impella; interior device views; and the built-in teaching session '
+             'played with scripted demonstration answers (no human participant data). Captions and section titles were overlaid for the recording, and '
+             'physiology segments are time-compressed 8x where marked. The video was produced for an earlier educational presentation of the tool and is '
+             'provided for illustration; it is not part of the verification.\n')
 parts.append('# Section S2. Parameter provenance\n' + demote(prov.split('\n', 1)[1]))
 parts.append('# Section S3. Benchmark sources and extraction\n' + demote(section(rep, '## V3b.', '## V4.')))
 md_all = '\n\n'.join(parts)

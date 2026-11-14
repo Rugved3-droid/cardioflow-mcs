@@ -142,6 +142,14 @@ def add_rich(p, text):
             p.add_run(part)
 
 
+def hl_runs(p, text):
+    from docx.enum.text import WD_COLOR_INDEX
+    for part in re.split(r'(\[(?:ORCID|DEGREE)\])', text):
+        if not part: continue
+        r = p.add_run(part)
+        if part in ('[ORCID]', '[DEGREE]'): r.font.highlight_color = WD_COLOR_INDEX.YELLOW
+
+
 def para(d, text, bold=False, align=None):
     p = d.add_paragraph()
     if bold:
@@ -176,7 +184,8 @@ d.add_heading('Figure Legends', level=1)
 for lab, txt in FM.LEGENDS:
     p = d.add_paragraph(); p.add_run(lab + ' ').bold = True; p.add_run(txt)
 d.add_heading('Supplemental Digital Content', level=1)
-para(d, 'Supplemental Digital Content 1 (PDF): model equations (Section S1), full parameter table (Table S1), numerical verification (Table S2), '
+para(d, 'Supplemental Digital Content Video 1 (MP4; legend in Supplemental Digital Content 1). '
+        'Supplemental Digital Content 1 (PDF): model equations (Section S1), full parameter table (Table S1), numerical verification (Table S2), '
         'Impella P1–P9 sweep (Table S3), baseline comparison (Table S4), full benchmark concordance with source locations (Table S5), '
         'baroreflex on vs off (Table S6), IABP balloon volume (Table S7), sensitivity tornado plot (Figure S1), full paired-state screen (Figure S2), parameter provenance (Section S2) and benchmark extraction (Section S3).')
 d.save(OUT / 'Manuscript.docx')
@@ -187,16 +196,17 @@ para(t, FM.TITLE, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
 para(t, '')
 p = t.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 for i, (n, a, _) in enumerate(FM.AUTHORS):
-    p.add_run(n); r = p.add_run(a + ('*' if i == 0 else '')); r.font.superscript = True
+    hl_runs(p, n); r = p.add_run(a + ('*' if i == 0 else '')); r.font.superscript = True
     if i < len(FM.AUTHORS) - 1: p.add_run(', ')
 for a, txt in FM.AFFILIATIONS:
     p = t.add_paragraph(); r = p.add_run(a); r.font.superscript = True; p.add_run(' ' + txt)
 para(t, '')
 para(t, f'*Corresponding author: {FM.CORRESPONDING[0]}, {FM.CORRESPONDING[1]}. Email: {FM.CORRESPONDING[2]}')
-for n, _, o in FM.AUTHORS: para(t, f'{n}: {o}')
+for n, _, o in FM.AUTHORS:
+    hl_runs(t.add_paragraph(), f'{n}: {o}')
 para(t, f'Running head: {FM.RUNNING_HEAD}')
-para(t, f'Funding: {FM.FUNDING}')
-para(t, f'Conflicts of interest: {FM.COI}')
+para(t, f'Sources of Funding: {FM.FUNDING}')
+para(t, f'Conflicts of Interest: {FM.COI}')
 para(t, f'Author contributions: {FM.AUTHOR_CONTRIBUTIONS}')
 para(t, f'Code availability: {URL} (tag {TAG}, commit {HASH}).')
 para(t, 'Ethics: This in silico study involved no human or animal participants.')

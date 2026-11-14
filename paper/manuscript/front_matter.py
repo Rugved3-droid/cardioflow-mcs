@@ -11,9 +11,9 @@ TITLE_ALTERNATIVES = [
 RUNNING_HEAD = 'Paired-State MCS Simulation'
 
 AUTHORS = [
-    ('Rugved Parmar, MBBS', '1', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
-    ('Md Fahim', '1', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
-    ('Shreya P. Trivedi', '2', 'ORCID: 0000-0000-0000-0000 [placeholder]'),
+    ('Rugved Parmar, MBBS', '1', 'ORCID: https://orcid.org/0009-0005-8941-3745'),
+    ('Md Fahim, [DEGREE]', '1', 'ORCID: [ORCID]'),
+    ('Shreya P. Trivedi, [DEGREE]', '2', 'ORCID: [ORCID]'),
 ]
 AFFILIATIONS = [
     ('1', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA'),
@@ -21,9 +21,11 @@ AFFILIATIONS = [
 ]
 CORRESPONDING = ('Rugved Parmar, MBBS', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA',
                  'parmarrugved@gmail.com')
-FUNDING = 'None. [AUTHOR TO CONFIRM]'
-COI = 'The authors declare no conflicts of interest. [AUTHOR TO CONFIRM]'
-AUTHOR_CONTRIBUTIONS = '[AUTHOR TO COMPLETE, e.g., R.P.: conception, software, analysis, drafting; M.F.: analysis, review; S.P.T.: supervision, review.]'
+FUNDING = 'None.'
+COI = 'The authors declare no conflicts of interest.'
+AUTHOR_CONTRIBUTIONS = ('R.P. conceived the study, developed the software, performed the verification analyses and drafted the manuscript. '
+                        'M.F. reviewed the software, contributed to validation and critically revised the manuscript. '
+                        'S.P.T. supervised the work and critically revised the manuscript. All authors approved the final version.')
 
 LEGENDS = [
     ('Figure 1.', 'Model structure and paired-state display. (A) Seven-compartment closed-loop model. Solid arrows, native circulation; '
