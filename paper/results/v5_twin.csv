@@ -1,0 +1,10 @@
+test,case,ticks,beats,max_abs_diff,bit_identical,pass_1e9,right_pane_did_change,right_final_lvedp,left_final_lvedp,neighbour_final_lvedp,unchanged_final_lvedp
+T1_identical_inputs,S0 | S0,600000,1000,0,true,true,,,,,
+T1_identical_inputs,S3 | S3,600000,1000,0,true,true,,,,,
+T1_identical_inputs,S4 | S4,600000,1000,0,true,true,,,,,
+T2_change_one_pane,right: ECMO 0->4 L/min; left vs solo reference,600000,1000,0,true,true,true,26.50358427,20.02049572,,
+T2_change_one_pane,right: Impella 0->P8; left vs solo reference,600000,1000,0,true,true,true,12.99118725,20.02049572,,
+T2_change_one_pane,right: IABP off->on; left vs solo reference,600000,1000,0,true,true,true,16.57659814,20.02049572,,
+T2_change_one_pane,right: ECMO 0->7 L/min; left vs solo reference,600000,1000,0,true,true,true,30.53292673,20.02049572,,
+T3_fork,fork mid-beat; continuing pane vs clone at fork instant,600000,1000,0,true,true,,,,,
+T4_patient_param_one_sim,neighbour Ees x1.2; unchanged sim vs solo,600000,1000,0,true,true,,,,17.19881122,20.02049572

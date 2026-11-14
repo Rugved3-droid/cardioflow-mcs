@@ -1,0 +1,21 @@
+test,scenario,n_values,n_not_bit_identical,max_rel_err
+A_node_vs_chrome,S0,5607,2548,5.001662934e-15
+A_node_vs_chrome,S1,5607,2777,5.001662934e-15
+A_node_vs_chrome,S2,5607,2874,1.123397934e-14
+A_node_vs_chrome,S3,5607,2621,6.111116382e-15
+A_node_vs_chrome,S4,5607,3390,3.691246566e-14
+A_node_vs_chrome,S5,5607,2789,6.293216808e-15
+A_node_vs_chrome,IABP_1to2,5607,2679,5.001662934e-15
+A_node_vs_chrome,IABP_earlyInflation,5607,3463,5.113321432e-15
+A_node_vs_chrome,ECMO4_IABP,5607,3035,6.671570408e-15
+B_variant_vs_shipped,S0,5607,0,0
+B_variant_vs_shipped,S1,5607,0,0
+B_variant_vs_shipped,S2,5607,0,0
+B_variant_vs_shipped,S3,5607,0,0
+B_variant_vs_shipped,S4,5607,0,0
+B_variant_vs_shipped,S5,5607,0,0
+B_variant_vs_shipped,IABP_1to2,5607,0,0
+B_variant_vs_shipped,IABP_earlyInflation,5607,0,0
+B_variant_vs_shipped,ECMO4_IABP,5607,0,0
+C_snapshot_recompute_vs_shipped_json,all 7 snapshots,484,0,
+C_snapshot_values_present_in_release_html,all 7 snapshots,330,0,

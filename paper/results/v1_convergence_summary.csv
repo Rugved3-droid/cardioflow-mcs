@@ -1,0 +1,8 @@
+scenario,shipped_substeps,shipped_h_ms,shipped_max_relchg_on_halving,shipped_max_relchg_vs_finest,shipped_passes_0p5pct,coarsest_substeps_meeting_criterion
+S0_shock,4,0.2500000000,2.059324806e-7,1.712527769e-7,true,1
+S1_IABP,4,0.2500000000,2.068491084e-7,1.695190125e-7,true,1
+S2_ImpellaP8,4,0.2500000000,4.206506447e-7,6.148670893e-7,true,1
+S3_ECMO4,4,0.2500000000,2.918429212e-7,1.961423832e-7,true,1
+S4_ECMO4_P5,4,0.2500000000,0.000001059922790,0.000002350955084,true,1
+S5_ECMO2_P8,4,0.2500000000,5.507261701e-7,3.440467370e-7,true,1
+ECMO4_IABP,4,0.2500000000,7.052673133e-7,4.312184292e-7,true,1

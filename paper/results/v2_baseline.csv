@@ -1,0 +1,18 @@
+condition,variable,units,model_value,ref_low,ref_high,ref_source,verdict
+cardiogenic_shock,MAP,mmHg,61.92167371,,,,PENDING: no reference range supplied
+cardiogenic_shock,SBP,mmHg,73.34373312,,,,PENDING: no reference range supplied
+cardiogenic_shock,DBP,mmHg,52.91501270,,,,PENDING: no reference range supplied
+cardiogenic_shock,CO,L/min,2.983282493,,,,PENDING: no reference range supplied
+cardiogenic_shock,SV,mL,29.83282493,,,,PENDING: no reference range supplied
+cardiogenic_shock,LVEDP,mmHg,20.02049572,,,,PENDING: no reference range supplied
+cardiogenic_shock,LVEDV,mL,187.7843753,,,,PENDING: no reference range supplied
+cardiogenic_shock,LVESV,mL,159.2036387,,,,PENDING: no reference range supplied
+cardiogenic_shock,EF_native,%,15.88674504,,,,PENDING: no reference range supplied
+cardiogenic_shock,LV_emptying_fraction,%,15.88605049,,,,PENDING: no reference range supplied
+cardiogenic_shock,native_CO,L/min,2.983282493,,,,PENDING: no reference range supplied
+cardiogenic_shock,AV_open_fraction,fraction of cycle,0.2730555556,,,,PENDING: no reference range supplied
+cardiogenic_shock,PCWP_equiv_meanLAP,mmHg,20.23815699,,,,PENDING: no reference range supplied
+cardiogenic_shock,RAP_equiv_meanSVpressure,mmHg,13.48093037,,,,PENDING: no reference range supplied
+cardiogenic_shock,mPAP,mmHg,25.07963632,,,,PENDING: no reference range supplied
+cardiogenic_shock,SVR_equiv,WU,15.81975412,,,,PENDING: no reference range supplied
+cardiogenic_shock,HR,bpm,100,,,,PENDING: no reference range supplied

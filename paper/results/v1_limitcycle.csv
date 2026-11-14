@@ -1,0 +1,10 @@
+scenario,cycle_ms,comparison_lag_beats,beats_cold_start_to_steady_unsupported,beats_unsupported_phase,beats_after_command_to_steady,seconds_after_command_to_steady,beats_in_shipped_recipe_support_phase,recipe_residual_worst_rel,recipe_residual_worst_output,residual_same_beat_parity
+S0_shock,600,1,33,150,1,0.6000000000,200,8.464547775e-14,lvedp,true
+S1_IABP,600,1,33,150,33,19.80000000,200,1.160095976e-9,lvedp,true
+S2_ImpellaP8,600,1,33,150,53,31.80000000,200,5.965527643e-8,lvedp,true
+S3_ECMO4,600,1,33,150,55,33,200,1.033171325e-9,nativeSv,true
+S4_ECMO4_P5,600,1,33,150,60,36,200,1.332477684e-9,nativeSv,true
+S5_ECMO2_P8,600,1,33,150,56,33.60000000,200,7.156002322e-8,lvedp,true
+IABP_1to2,600,2,33,150,34,20.40000000,200,5.215066509e-10,lvedp,true
+ECMO4_IABP,600,1,33,150,53,31.80000000,200,9.080338571e-10,nativeSv,true
+ECMO6,600,1,33,150,63,37.80000000,200,6.749491273e-10,nativeSv,true
