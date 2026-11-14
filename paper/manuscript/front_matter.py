@@ -12,7 +12,7 @@ RUNNING_HEAD = 'Paired-State MCS Simulation'
 
 AUTHORS = [
     ('Rugved Parmar, MBBS', '1', 'ORCID: https://orcid.org/0009-0005-8941-3745'),
-    ('Md Fahim, [DEGREE]', '1', 'ORCID: [ORCID]'),
+    ('Md Fahim, MD', '1', 'ORCID: https://orcid.org/0009-0000-2095-8134'),
     ('Shreya P. Trivedi, MD', '2', 'ORCID: https://orcid.org/0000-0001-7183-0624'),
 ]
 AFFILIATIONS = [
