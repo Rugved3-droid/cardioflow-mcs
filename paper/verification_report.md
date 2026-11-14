@@ -10,7 +10,7 @@ Every number below comes from a CSV in `paper/results/`, and the script that wro
 | P0 Headless runner = browser engine | Node vs Chrome max rel. error **3.7×10⁻¹⁴** (criterion 1×10⁻⁶) | PASS |
 | V1a Time-step convergence | shipped h = 0.25 ms; worst change on halving **1.1×10⁻⁶ relative (0.0001%)**, criterion 0.5% | PASS |
 | V1b Limit cycle | steady 33–63 beats after the command; recipe residual ≤ 7×10⁻⁸ | PASS |
-| V1c Volume conservation | max drift **2.2×10⁻⁹ mL** (≤ 9×10⁻¹³ relative) over 510,000 ticks | PASS |
+| V1c Volume conservation | max drift **2.0×10⁻⁹ mL** (≤ 9×10⁻¹³ relative) over 510,000 ticks | PASS |
 | V2 Baseline vs reference shock values | Donker 2019 LV-failure row (human simulation, point values) + Ostadal 2015 / Hála 2020 baselines (porcine, context only) | REPORTED (see V2) |
 | V3 Device benchmark | 67 comparisons from 7 downloaded sources. Reflex on: **consistency 35/38**, **independent 24/29** (significant-only 10/11). Reflex off: identical counts | 8 discordances listed |
 | Mismatch 2 (IABP ≥ Impella P5 on ECMO) | Root cause found, not a code error: Impella P5 delivers only 2.2 L/min under ECMO 4; the 40 mL IABP acts on one lumped arterial compliance and the reflex amplifies it | NO FIX (faithful behavior; limitation) |
@@ -55,7 +55,7 @@ Every number below comes from a CSV in `paper/results/`, and the script that wro
 
 - The shipped recipe allows 200 beats on device. Its residual against +300 s is ≤ 7.2×10⁻⁸ relative.
 
-**V1c. Conservation** (`v1_conservation.csv`): max |V(t) − V(0)| ≤ 2.2×10⁻⁹ mL out of 2,287 mL in all 9 scenarios, including every pump and ECMO 6 L/min.
+**V1c. Conservation** (`v1_conservation.csv`): max |V(t) − V(0)| ≤ 2.0×10⁻⁹ mL out of 2,287 mL in all 9 scenarios, including every pump and ECMO 6 L/min.
 
 ## V2. Baseline physiology (`v2_baseline.ts` → `v2_baseline.csv`)
 

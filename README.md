@@ -624,3 +624,10 @@ Baroreflex acts on SVR only. Heart rate is held constant by design, because a pr
 - **Determinism:** two identical runs hash identically, lockstepped clones stay bit-identical, and the shipped snapshots equal a fresh recomputation.
 
 Current result: see `validation/report.md`.
+
+## Citing and the ASAIO verification paper
+
+The code and verification state described in the manuscript submitted to *ASAIO Journal* ("Paired-State Simulation of Temporary Mechanical Circulatory Support") is
+https://github.com/Rugved3-droid/cardioflow-mcs at tag `v1.0-asaio`, commit `ba4cc550ed089b3f773a51337ff99bae30db7405`. Citation metadata is in `CITATION.cff`.
+The verification scripts, extracted benchmark values, results and submission files are in `paper/`; rebuild everything with `make -C paper paper`
+(or `python paper/scripts/make_paper.py`). The simulator is not validated for patient-specific decisions.

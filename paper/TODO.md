@@ -1,43 +1,21 @@
-# TODO / open items (ASAIO verification paper)
+# TODO: open items before submission (ASAIO)
 
-## Author decisions recorded (2026-11-14)
-- V2: shock baseline only; no normal baseline. Limitations: "no normal-physiology calibration".
-- Donker 2019 (confirmed = PMC6325768) and Ostadal 2015: reported as **consistency with the source model or calibration anchors**, never validation. Provenance: `paper/parameter_provenance.md`.
-- EF: EF_native = native SV / LVEDV is primary. LV emptying fraction is secondary and never labeled EF. Native AV flow and opening fraction are reported alongside.
-- Benchmarks (second pass):
-  - Only downloaded sources are used.
-  - Burkhoff 2015 is background only.
-  - Animal data are compared by direction and % only.
-  - V2 reference values come only from the benchmark papers' shock baselines.
-- Mismatch 2: no code fix. There is no code error, wrong unit or documented device characteristic to justify one (see `verification_report.md`). `fix/impella-model` was not created.
+## Author must check or supply
+1. [ ] **LICENSE.** The repository has no LICENSE file, but the manuscript says "open-source". Add a license, or change the wording.
+2. [ ] **[CITE NEEDED] (4):**
+   - time-varying elastance / double-Hill activation (Methods, Model);
+   - three-element Windkessel (Methods, Model);
+   - baroreflex sigmoid model (Methods, Model);
+   - SCAI stage C–D shock classification (Methods, Model).
+   These need references outside `references_provided.bib`; add them to the .bib and rebuild.
+3. [ ] **References: 10 used (target 20–30).** Only the provided .bib may be cited. Consider adding sources for item 2 and further background (for example ECMO LV-distension incidence, Impella H–Q characteristics, IABP physiology).
+4. [ ] **Title page:** ORCIDs (placeholders), funding (currently "None", unconfirmed), COI (currently "none", unconfirmed), author contributions, your degree in the cover letter.
+5. [ ] **AI disclosure (Methods):** the text states that the authors reviewed the code, checked extracted values against the sources, and approved the text. Make sure that is true before submitting.
+6. [ ] **ASAIO reference style:** check the author-list truncation rule (currently all authors if ≤ 6, otherwise the first 3 + "et al") against the current Instructions for Authors.
+7. [ ] **Figure 1B:** the screenshot text is application-size (< 12 pt). Accept it, or crop to one pane or region.
+8. [ ] **Visual abstract:** open `submission/VisualAbstract.pptx` and check text fit (it was not rendered here; no PowerPoint or LibreOffice available).
+9. [ ] **Word count:** main text 2,159 (below the 2,600–2,800 target, within the 3,500 limit).
+10. [ ] `paper/asaio_guide.md` was never supplied; formatting follows your prompt's rules.
 
-## Benchmark sources: status
-| Key | XML | PDF | Notes |
-|---|---|---|---|
-| donker2019simulation | yes | **NO** | The Europe PMC render and the PMC /pdf/ URLs return 403 or a JS challenge page. The XML has the full text. Table 1 was taken from the XML graphic. SDC Appendix downloaded as .docx (`pdfs/donker2019simulation_SDC.docx`). |
-| donker2019review | yes | **NO** | Same failure as above. Full text from the XML. |
-| broome2016 | yes | yes | |
-| ostadal2015 | yes | yes | |
-| hala2020 | yes | yes | |
-| frontiers2020impella (Nix 2020, PMC7299088) | yes | yes | Abiomed-funded study; disclose when citing. |
-| mollerhelgestad2019 | not in PMC OA | **NO** (no PDF link) | Full text is free on the publisher page (`benchmarks/mollerhelgestad2019_landing.html`). Tables 1–2 were read from the publisher images in `benchmarks/img/`. **Author: confirm you are comfortable citing it as open (Europe PMC flags isOpenAccess = N).** |
-| Visual_Abstract_Templates.pptx | — | downloaded | `paper/Visual_Abstract_Templates.pptx` |
-
-## Open items for the author
-1. [ ] **Reflex arm for the headline numbers.** Should the manuscript lead with reflex-on (shipped) magnitudes, with reflex-off as sensitivity? That is the current default in the report.
-2. [ ] **S4 = Impella P5.** P5 was chosen for on-screen legibility. On ECMO 4 it delivers 2.2 L/min, and that is what produces mismatch 2. Options:
-   - (a) keep P5 and state the reason;
-   - (b) report P6 or P8 for ECpella in the paper. This needs no code change; it is a scenario choice in `paper/runner/scenarios.ts`.
-3. [ ] **Møller-Helgestad open-access status** (see table above).
-4. [ ] `paper/old_medteacher.docx` for affiliations (not found).
-5. [ ] Demo video file (optional SDC).
-6. [ ] `paper/asaio_guide.md` (not supplied; Phase 3 will use the template and public instructions only if you agree).
-
-## Remaining unbenchmarked or unresolved model behaviors
-- AV opening fraction under ECMO: none of the downloaded sources reports it.
-- Stroke work under ECMO: the model falls while both porcine studies rise. This is phenotype-contingent (README E8). Reported as a discordance.
-- Independent discordances: SV maintenance (Hála), mPAP fall on ECMO (Nix), and LV peak pressure rise on Impella with norepinephrine (Møller-Helgestad).
-- The model cannot reach Impella 5.0 flows on ECMO (maximum 3.8 L/min).
-
-## [CITE NEEDED] log
-(none yet; no manuscript text drafted)
+## Done
+- Benchmarks, V2/V3, mismatch 2–4, provenance and decisions 1–10 are applied (see `AUDIT.md` and `verification_report.md`).

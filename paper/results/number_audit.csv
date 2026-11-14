@@ -1,0 +1,57 @@
+claim,source_file,value,text_expected,found_in_manuscript
+P0 Node vs Chrome max rel err,results/p0_equivalence.csv,3.69125e-14,3.7 × 10⁻¹⁴,True
+V1 max rel change on halving h (shipped),results/v1_convergence_summary.csv,1.05992e-06,1.1 × 10⁻⁶,True
+V1 beats to steady after command (min),results/v1_limitcycle.csv,33,33–,True
+V1 beats to steady after command (max),results/v1_limitcycle.csv,63,–63 beats,True
+V1 max volume drift (mL),results/v1_conservation.csv,2.02863e-09,2.0 × 10⁻⁹ mL,True
+V1 ticks,results/v1_conservation.csv,510000,"510,000 ticks",True
+V5 tests passing,results/v5_twin.csv,9,all 9 paired tests,True
+V5 beats,results/v5_twin.csv,1000,"1,000 beats",True
+Baseline MAP,results/v2_baseline.csv,61.9217,61.9 mmHg,True
+Baseline native CO,results/v3_runs.csv,2.98328,2.98 L/min,True
+Baseline SV,results/v3_runs.csv,29.8328,stroke volume 29.8 mL,True
+Baseline LVEDP,results/v3_runs.csv,20.0205,LVEDP 20.0 mmHg,True
+Baseline EDV,results/v3_runs.csv,187.784,EDV 188 mL,True
+Baseline EF_native,results/v3_runs.csv,15.8867,ejection fraction 15.9%,True
+Baseline mean LAP,results/v3_runs.csv,20.2382,mean LAP 20.2 mmHg,True
+Baseline EDV vs Donker (%),results/v2_baseline.csv,18.8509,19% larger,True
+"Baseline within 5% of Donker (max |%| of MAP, CO, SV, HR)",results/v2_baseline.csv,3.76508,within 5%,True
+ECMO 4 ΔMAP,results/m2_impella_vs_iabp.csv,19.0682,MAP by 19.1 mmHg,True
+ECMO 4 ΔLVEDP,results/m2_impella_vs_iabp.csv,6.48309,LVEDP by 6.5 mmHg,True
+ECMO 4 ΔEDV %,results/m2_impella_vs_iabp.csv,11.9175,EDV by 12%,True
+ECMO 4 Δnative SV %,results/m2_impella_vs_iabp.csv,24.3896,native stroke volume by 24%,True
+AV open at ECMO 4,results/v3_runs.csv,22.7083,23% of the cycle at 4 L/min,True
+AV open at ECMO 7,results/v3_runs.csv,19.8889,20% at 7 L/min,True
+Impella P8 alone ΔLVEDP,results/m2_impella_vs_iabp.csv,7.02931,lowered LVEDP by 7.0 mmHg and abolished,True
+IABP alone ΔLVEDP,results/m2_impella_vs_iabp.csv,3.4439,IABP lowered LVEDP by 3.4 mmHg,True
+Impella flow P2 on ECMO 4,results/m2_impella_vs_iabp.csv,1.04599,1.05 L/min at P2,True
+Impella flow P8 on ECMO 4,results/m2_impella_vs_iabp.csv,3.3951,3.40 L/min at P8,True
+Impella flow P5,results/m2_impella_vs_iabp.csv,2.19443,P5 (2.2 L/min),True
+ΔLAP P5,results/m2_impella_vs_iabp.csv,3.45403,mean LAP by 3.5 mmHg and the IABP,True
+ΔLAP IABP,results/m2_impella_vs_iabp.csv,4.09818,IABP by 4.1 mmHg,True
+Impella flow P6,results/m2_impella_vs_iabp.csv,2.6276,P6 (2.6 L/min),True
+ΔLAP P8,results/m2_impella_vs_iabp.csv,-9.68454,−9.7 mmHg at P8,True
+IABP Δnative SV %,results/m2_impella_vs_iabp.csv,22.1003,native stroke volume by 22%,True
+Native SV zero from P7,results/m2_impella_vs_iabp.csv,0,to zero from P7,True
+"30 mL balloon, reflex off, ΔLAP",results/m2_iabp_balloon_volume.csv,2.35926,lowered mean LAP by 2.4 mmHg (source,True
+EF_native ECMO4+P8,results/v3_runs.csv,0,native ejection fraction was 0%,True
+LV emptying ECMO4+P8,results/v3_runs.csv,11.0106,fractional LV emptying was 11.0%,True
+Consistency concordance,results/v3_concordance_summary.json,35 of 38,35 of 38,True
+Independent concordance,results/v3_concordance_summary.json,24 of 29,24 of 29,True
+Independent significant-only,results/v3_concordance_summary.json,10 of 11,10 of 11,True
+Reflex off counts identical,results/v3_concordance_summary.json,True,counts were identical with the reflex off,True
+MH ECMO LVEDP model vs bench,results/v3_concordance.csv,5.36692,LVEDP (+5.4 vs +5 mmHg),True
+MH ECMO EDV model %,results/v3_concordance.csv,10.0346,EDV (+10% vs +10%),True
+Hála ESV model %,results/v3_concordance.csv,19.8461,end-systolic volume (+20% vs +20%),True
+Hála LVEDP model vs bench %,results/v3_concordance.csv,35.0382,(+35% vs +114%,True
+Discordant count,results/v3_concordance.csv,8,Eight comparisons were discordant,True
+Hála SV model %,results/v3_concordance.csv,27.8029,stroke volume fell by 28%,True
+V4 directions,results/v4_direction_flips.csv,50,None of 50 device-effect directions,True
+V4 sign flips,results/v4_direction_flips.csv,0,None of,True
+V4 perturbed cases,results/v4_direction_flips.csv,31,31 perturbed configurations,True
+Reflex sign flips,results/m3_reflex_on_off.csv,0,(0 of 63),True
+Reflex off ECMO4 ΔMAP,results/m3_reflex_on_off.csv,36.4792,MAP +36.5 vs,True
+Reflex on ECMO4 ΔMAP,results/m3_reflex_on_off.csv,19.0682,vs +19.1 mmHg,True
+Reflex off ECMO4 ΔLVEDP,results/m3_reflex_on_off.csv,12.8934,+12.9 vs +6.5,True
+Max Impella flow on ECMO (P9),results/m2_impella_vs_iabp.csv,3.7797,cannot exceed 3.8 L/min,True
+V4 ECMO ΔLVEDP range under Ees ±20%,results/v4_tornado.csv,"(np.float64(5.00508233), np.float64(8.83542337))",+5.0 to +8.8 mmHg,True

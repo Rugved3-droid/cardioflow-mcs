@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use CardioFlow Twin, please cite the code release below (GitHub tag and commit). A manuscript describing its verification has been submitted to ASAIO Journal."
+title: "CardioFlow Twin: paired-state simulator of temporary mechanical circulatory support"
+type: software
+authors:
+  - given-names: Rugved
+    family-names: Parmar
+    affiliation: "Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center"
+  - given-names: Md
+    family-names: Fahim
+    affiliation: "Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center"
+  - given-names: Shreya P.
+    family-names: Trivedi
+    affiliation: "Beth Israel Deaconess Medical Center / Harvard Medical School"
+repository-code: "https://github.com/Rugved3-droid/cardioflow-mcs"
+url: "https://github.com/Rugved3-droid/cardioflow-mcs/tree/v1.0-asaio"
+version: v1.0-asaio
+commit: ba4cc550ed089b3f773a51337ff99bae30db7405
+date-released: 2026-11-14
+keywords:
+  - cardiogenic shock
+  - mechanical circulatory support
+  - VA-ECMO
+  - Impella
+  - intra-aortic balloon pump
+  - lumped-parameter model
