@@ -13,7 +13,7 @@ RUNNING_HEAD = 'Paired-State MCS Simulation'
 AUTHORS = [
     ('Rugved Parmar, MBBS', '1', 'ORCID: https://orcid.org/0009-0005-8941-3745'),
     ('Md Fahim, [DEGREE]', '1', 'ORCID: [ORCID]'),
-    ('Shreya P. Trivedi, [DEGREE]', '2', 'ORCID: [ORCID]'),
+    ('Shreya P. Trivedi, MD', '2', 'ORCID: https://orcid.org/0000-0001-7183-0624'),
 ]
 AFFILIATIONS = [
     ('1', 'Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center, Brooklyn, NY, USA'),

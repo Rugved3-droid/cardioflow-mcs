@@ -4,7 +4,7 @@
 1. [x] LICENSE: MIT added (2026-11-14).
 2. [x] [CITE NEEDED]: all 4 filled with Crossref-verified references.
 3. [x] References: 20 (target 18–22).
-4. [ ] **Title page:** funding, COI, contributions and R.P.'s ORCID are filled in. Still yellow placeholders: [DEGREE] and [ORCID] for Md Fahim and for Shreya P. Trivedi.
+4. [ ] **Title page:** funding, COI, contributions and R.P.'s ORCID are filled in. Still yellow placeholders: [DEGREE] and [ORCID] for Md Fahim. Shreya P. Trivedi: MD, ORCID 0000-0001-7183-0624 (ORCID public record; degree from her Harvard faculty profile and provider listings).
 5. [ ] **AI disclosure (Methods):** the text states that the authors reviewed the code, checked extracted values against the sources, and approved the text. Make sure that is true before submitting.
 6. [x] **ASAIO reference style** (confirmed by author): check the author-list truncation rule (currently all authors if ≤ 6, otherwise the first 3 + "et al") against the current Instructions for Authors.
 7. [x] **Figure 1B:** recaptured at 3x and cropped to the B − A column; the smallest on-screen text prints at 12.3 pt (asserted in fig_submission.py). Full screen moved to SDC Figure S2.

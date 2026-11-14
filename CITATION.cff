@@ -13,6 +13,7 @@ authors:
     affiliation: "Department of Medicine, SUNY Downstate Health Sciences University / Kings County Hospital Center"
   - given-names: Shreya P.
     family-names: Trivedi
+    orcid: "https://orcid.org/0000-0001-7183-0624"
     affiliation: "Beth Israel Deaconess Medical Center / Harvard Medical School"
 repository-code: "https://github.com/Rugved3-droid/cardioflow-mcs"
 url: "https://github.com/Rugved3-droid/cardioflow-mcs/tree/v1.0-asaio"
