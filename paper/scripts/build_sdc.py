@@ -71,7 +71,7 @@ parts.append('# Figure S2. Full screen of the paired-state display\n'
              'VA-ECMO 4 L/min + Impella P5. Captured by `paper/scripts/screenshot_twin.ts`; Figure 1B is a crop of the central B − A column.\n\n'
              f'<img src="data:image/png;base64,{shot}" style="width:100%">\n')
 parts.append('# Video 1. Demonstration of the paired-state simulator\n'
-             'Supplemental Digital Content Video 1 (SDC_Video_1.mp4; 4 min 55 s; also at https://youtu.be/sHLgmfZxZZM). Screen recording of the released '
+             'Supplemental Digital Content Video 1 (SDC_Video_1.mp4; 4 min 55 s). Screen recording of the released '
              'application (release/CardioFlow-MCS.html, identical to the file at tag v1.0-asaio) driven by a scripted tour: cardiogenic shock without support; '
              'VA-ECMO 4 L/min in side-by-side compare mode; Impella, IABP and VA-ECMO with Impella; interior device views; and the built-in teaching session '
              'played with scripted demonstration answers (no human participant data). Captions and section titles were overlaid for the recording, and '

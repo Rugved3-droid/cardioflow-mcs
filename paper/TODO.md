@@ -16,5 +16,5 @@
 - Benchmarks, V2/V3, mismatch 2–4, provenance and decisions 1–10 are applied (see `AUDIT.md` and `verification_report.md`).
 
 ## Demo video (SDC_Video_1.mp4)
-- [ ] It was made for the ACC Cardio Sim Creator Competition. The frames contain no ACC logo or name, but the section banners follow the competition rubric ("THE PROBLEM", "INTENDED AUDIENCE · SKILLSETS", "PROBLEM SOLVING & EFFICACY", "ASSESSMENT METRICS & COMPETENCY EVALUATION", "SIGNIFICANCE & INTEGRATION", "LIMITATION"), and the YouTube description reads "ACC sim creator competition". Decide whether that is acceptable for ASAIO.
-- [ ] It presents the tool for "internal medicine residents" and shows the scored teaching session plus a session spreadsheet. The answers are scripted (scripts/tour_video.mjs), so there is no human data, but the framing is educational and the paper is not an education paper.
+- [x] Re-encoded from the original recording (D:/cardioflow-video/CardioFlow_tour.mp4; same content as the YouTube upload). The YouTube link (whose description mentions the ACC competition) was removed from the manuscript and the SDC.
+- [ ] The section banners burned into the video follow the competition rubric ("THE PROBLEM", "ASSESSMENT METRICS & COMPETENCY EVALUATION", ...). There is no ACC name or logo. Accept them, or re-render a banner-free cut (the tour script can be rerun without the banner overlay, on request).

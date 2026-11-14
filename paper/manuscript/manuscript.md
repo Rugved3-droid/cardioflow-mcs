@@ -40,7 +40,7 @@ Each comparison scored the direction of change of one outcome for one device con
 Ejection fraction was native aortic-valve stroke volume divided by LV end-diastolic volume (EDV) in all scenarios; fractional LV emptying including pump outflow was reported separately. Mean left atrial pressure (LAP) represented pulmonary capillary wedge pressure (PCWP).
 
 ## Software, data, and AI use
-Every reported number is written by a script to a results file. Code, scripts, extracted benchmark values, and results are at https://github.com/Rugved3-droid/cardioflow-mcs (tag {{TAG}}, commit {{HASH}}). A demonstration video is available at https://youtu.be/sHLgmfZxZZM. Claude (Anthropic) was used to write and run the verification and figure scripts, to extract values from the benchmark articles, and to draft the manuscript; the authors reviewed the code, checked extracted values against the sources, and edited and approved the text. This in silico study involved no human or animal participants.
+Every reported number is written by a script to a results file. Code, scripts, extracted benchmark values, and results are at https://github.com/Rugved3-droid/cardioflow-mcs (tag {{TAG}}, commit {{HASH}}). A demonstration video is provided as Supplemental Digital Content Video 1. Claude (Anthropic) was used to write and run the verification and figure scripts, to extract values from the benchmark articles, and to draft the manuscript; the authors reviewed the code, checked extracted values against the sources, and edited and approved the text. This in silico study involved no human or animal participants.
 
 # RESULTS
 ## Numerical verification
